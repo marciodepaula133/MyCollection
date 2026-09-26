@@ -1,0 +1,32 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.trx
+efbundle
+efbundle.exe
+
+# Node / Nx
+node_modules/
+.nx/cache/
+.nx/workspace-data/
+dist/
+tmp/
+
+# Secrets & local config
+.env
+*.pem
+*.key
+keys/
+appsettings.*.local.json
+
+# Claude local settings
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
