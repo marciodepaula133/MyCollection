@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Empty shell for this setup slice (AD-4). JWT validation, ErrorKind -> ProblemDetails
+    mapping, forwarded headers and Serilog wiring are added alongside CAP-1, once there is
+    a real service to wire them against. See the setup spec's Decisions section.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyCollection.Results\MyCollection.Results.csproj" />
+  </ItemGroup>
+
+</Project>

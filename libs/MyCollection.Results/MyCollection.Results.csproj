@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Framework-free plumbing (AD-4). No PackageReferences, no framework dependencies. -->
+
+</Project>

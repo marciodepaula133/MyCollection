@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- AD-20: Domain and Application, with ports faked. Empty skeleton for this setup slice. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Auth.Domain\Auth.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Auth.Application\Auth.Application.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -13,7 +13,7 @@ Direct ports and the Postgres port exist only in `docker-compose.override.yml` (
 
 ## auth-api
 
-Routes, all under `/api/auth` unless noted:
+Scaffolded, not yet implemented: the four hexagonal projects, health checks and OpenAPI generation exist; CAP-1…CAP-6 business logic doesn't. Routes below are the target surface from `spec-mycollection-platform`, all under `/api/auth` unless noted:
 
 | Method | Path | Purpose | CAP |
 |---|---|---|---|

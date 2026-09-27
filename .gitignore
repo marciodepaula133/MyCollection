@@ -30,3 +30,5 @@ appsettings.*.local.json
 # OS
 .DS_Store
 Thumbs.db
+
+guides/

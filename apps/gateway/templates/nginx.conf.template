@@ -1,0 +1,163 @@
+# Rendered by the nginx:1.30-alpine image's docker-entrypoint envsubst step into
+# /etc/nginx/conf.d/nginx.conf, inside the http{} block already opened by /etc/nginx/nginx.conf.
+# AD-14, AD-15, AD-18: the gateway is the only place for CORS, rate limiting, request ids,
+# access logging and gateway-produced error bodies. It never exposes /health/* or
+# /.well-known/*, and never rewrites the path it proxies.
+
+# Resolve upstream hostnames at request time so the gateway survives services being
+# recreated or absent (AD-14).
+resolver 127.0.0.11 valid=10s;
+
+# ---- CORS (AD-14) ---------------------------------------------------------------------------
+# GATEWAY_CORS_ORIGINS is a `|`-separated list of allowed origins, e.g.
+# "http://localhost:5173|http://localhost:8080". Unlisted origins get no CORS headers and,
+# on the actual request, a 403 from the @cors_reject fallback below.
+map $http_origin $cors_allowed_origin {
+    default "";
+    "~^(${GATEWAY_CORS_ORIGINS})$" $http_origin;
+}
+
+# ---- rate limiting (AD-14) ------------------------------------------------------------------
+limit_req_status 429;
+limit_req_zone $binary_remote_addr zone=global_rl:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=auth_rl:10m rate=5r/m;
+
+# ---- JSON access log (AD-18) ----------------------------------------------------------------
+log_format json_combined escape=json
+    '{'
+        '"time":"$time_iso8601",'
+        '"requestId":"$request_id",'
+        '"remoteAddr":"$remote_addr",'
+        '"method":"$request_method",'
+        '"path":"$uri",'
+        '"status":$status,'
+        '"bodyBytesSent":$body_bytes_sent,'
+        '"requestTime":$request_time,'
+        '"upstream":"$upstream_addr",'
+        '"upstreamStatus":"$upstream_status",'
+        '"referer":"$http_referer",'
+        '"userAgent":"$http_user_agent"'
+    '}';
+access_log /dev/stdout json_combined;
+
+server {
+    listen 8080;
+    server_name _;
+
+    # X-Request-Id always comes from nginx's own request id, never the client (AD-14).
+    proxy_set_header X-Request-Id $request_id;
+    add_header X-Request-Id $request_id always;
+
+    # Overwrite any client-supplied forwarding headers (AD-15).
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $http_host;
+    proxy_set_header Host $http_host;
+
+    limit_req zone=global_rl burst=20 nodelay;
+
+    # Never exposed publicly (AD-14).
+    location ~ ^/(health|\.well-known)(/|$) {
+        return 404;
+    }
+
+    # POST /api/auth/login and /api/auth/register carry the same CORS/origin handling as the
+    # general /api/auth/ location below, plus the tighter per-endpoint rate limit on top of the
+    # global one (AD-14). A regex location (rather than two `location =` blocks) keeps this
+    # logic in one place instead of duplicating it.
+    location ~ ^/api/auth/(login|register)$ {
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors_allowed_origin always;
+            add_header Access-Control-Allow-Credentials "true" always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+            add_header Vary "Origin" always;
+            return 204;
+        }
+
+        if ($cors_allowed_origin = "") {
+            set $cors_reject "no-origin";
+        }
+        if ($http_origin = "") {
+            set $cors_reject "";
+        }
+        if ($cors_reject = "no-origin") {
+            return 403;
+        }
+
+        # `limit_req` in a location is not merged with the server-level directive (nginx
+        # replaces, not adds, the inherited set once a location declares its own) - both zones
+        # are declared explicitly here so the global limit still applies alongside the tighter one.
+        limit_req zone=global_rl burst=20 nodelay;
+        limit_req zone=auth_rl burst=5 nodelay;
+
+        add_header Access-Control-Allow-Origin $cors_allowed_origin always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        add_header Vary "Origin" always;
+
+        # A variable upstream, not a literal hostname: with a literal, nginx resolves it once at
+        # config-load/test time via the system resolver and fails hard if the host isn't up yet.
+        # A variable defers resolution to request time through the `resolver` directive above,
+        # which is what actually lets the gateway survive auth-api being recreated or absent (AD-14).
+        set $auth_upstream "http://auth-api:8080";
+        proxy_pass $auth_upstream;
+    }
+
+    location /api/auth/ {
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $cors_allowed_origin always;
+            add_header Access-Control-Allow-Credentials "true" always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+            add_header Vary "Origin" always;
+            return 204;
+        }
+
+        if ($cors_allowed_origin = "") {
+            set $cors_reject "no-origin";
+        }
+        if ($http_origin = "") {
+            set $cors_reject "";
+        }
+        if ($cors_reject = "no-origin") {
+            return 403;
+        }
+
+        add_header Access-Control-Allow-Origin $cors_allowed_origin always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        add_header Vary "Origin" always;
+
+        set $auth_upstream "http://auth-api:8080";
+        proxy_pass $auth_upstream;
+    }
+
+    location / {
+        return 404;
+    }
+
+    # Gateway-produced errors: static application/problem+json bodies (AD-14).
+    error_page 404 = @problem_404;
+    error_page 429 = @problem_429;
+    error_page 502 = @problem_502;
+    error_page 503 = @problem_503;
+
+    location @problem_404 {
+        default_type application/problem+json;
+        return 404 '{"type":"about:blank","title":"Not Found","status":404,"code":"not_found","traceId":"$request_id"}';
+    }
+
+    location @problem_429 {
+        default_type application/problem+json;
+        return 429 '{"type":"about:blank","title":"Too Many Requests","status":429,"code":"rate_limited","traceId":"$request_id"}';
+    }
+
+    location @problem_502 {
+        default_type application/problem+json;
+        return 502 '{"type":"about:blank","title":"Bad Gateway","status":502,"code":"bad_gateway","traceId":"$request_id"}';
+    }
+
+    location @problem_503 {
+        default_type application/problem+json;
+        return 503 '{"type":"about:blank","title":"Service Unavailable","status":503,"code":"service_unavailable","traceId":"$request_id"}';
+    }
+}

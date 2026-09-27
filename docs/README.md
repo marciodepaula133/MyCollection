@@ -26,6 +26,8 @@ Start here. Each entry says **what questions the file answers**, so you (or an A
 | Architecture decision log | [`…/architecture-MyCollection-API-2026-09-26/.memlog.md`](../_bmad-output/planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/.memlog.md) | You need **why** a decision was made. |
 | **Platform spec** | [`_bmad-output/specs/spec-mycollection-platform/SPEC.md`](../_bmad-output/specs/spec-mycollection-platform/SPEC.md) | You need the capabilities (`CAP-n`) and success criteria of the current slice. |
 | Spec companions | [`stack.md`](../_bmad-output/specs/spec-mycollection-platform/stack.md), [`architecture-diagrams.md`](../_bmad-output/specs/spec-mycollection-platform/architecture-diagrams.md) | Endpoint lists, schema sketch, later-slice interfaces. |
+| **Email-identity spec** (phase 2, not yet built) | [`_bmad-output/specs/spec-email-identity/SPEC.md`](../_bmad-output/specs/spec-email-identity/SPEC.md) | You need the capabilities for email verification, unconfirmed-account login blocking and expiry, password reset, or the social-login reclaim of a squatted account (`CAP-9`…`CAP-16`). |
+| Scaffold build record | [`_bmad-output/implementation-artifacts/spec-mycollection-platform-setup.md`](../_bmad-output/implementation-artifacts/spec-mycollection-platform-setup.md) | You need to know exactly what the initial repo/service scaffold set up, a real bug found and fixed during that build (the gateway's login/register CORS handling), or what's still pending verification. |
 
 ## Quick lookup
 

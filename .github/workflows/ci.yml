@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.401"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: nx affected - build & test
+        run: npx nx affected -t build test
+
+      - name: Check OpenAPI drift (AD-16)
+        # `nx affected -t build` above already regenerated apps/*/openapi/*.json; any diff
+        # here means the committed contract is stale.
+        run: git diff --exit-code -- 'apps/*/openapi'
+
+      - name: Validate gateway config (nginx -t)
+        run: |
+          docker build -f apps/gateway/Dockerfile -t mycollection/gateway:ci .
+          docker run --rm -e GATEWAY_CORS_ORIGINS="http://localhost:8080" mycollection/gateway:ci nginx -t
