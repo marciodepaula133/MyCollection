@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Infrastructure: driven adapters (EF Core + migrations, crypto, JWT signing, OAuth
+    providers, external HTTP clients). References Application and Domain (AD-2).
+    EF Core / Npgsql packages are added alongside CAP-1, once there is a real model.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Auth.Application\Auth.Application.csproj" />
+    <ProjectReference Include="..\Auth.Domain\Auth.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Only what AD-12 needs to wire the migration bundle mechanism ahead of CAP-1: an empty
+      DbContext and a design-time factory. No entities, no migrations yet.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

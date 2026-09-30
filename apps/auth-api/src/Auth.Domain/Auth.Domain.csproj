@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain: entities, value objects, domain rules. References nothing (AD-2). -->
+
+</Project>

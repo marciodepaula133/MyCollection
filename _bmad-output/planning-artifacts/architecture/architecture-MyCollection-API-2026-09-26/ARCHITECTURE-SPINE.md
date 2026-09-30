@@ -316,7 +316,7 @@ MyCollection/
 ## Deferred
 
 - **Production deployment and hosting**: target platform, TLS termination at the gateway, secret store for the signing key and OAuth secrets. *Revisit when the first deployment is planned.* AD-12, AD-17 and AD-19 already fix the production-shaped parts.
-- **Email identity** (email verification, password reset, SMTP via MailKit, Mailpit in dev): its own spec, `spec-email-identity`. It closes AD-10's accepted squatting gap.
+- **Email identity** (email verification, password reset, SMTP via MailKit, Mailpit in dev, Brevo as the production SMTP relay on its free tier): its own spec, `spec-email-identity`. It closes AD-10's accepted squatting gap. Templates stay as HTML built in application code and sent as the SMTP body, not the provider's dashboard editor, so the relay stays swappable via SMTP host/credentials alone.
 - **Signing-key rotation procedure**: the `kid` and JWKS mechanism exists; a single dev key is enough for now.
 - **Observability beyond stdout logs** (central log UI such as Seq or Loki, metrics, tracing): roadmap phase 6.
 - **E2E tests** (including a mock OAuth2 server): after the first slice ships.

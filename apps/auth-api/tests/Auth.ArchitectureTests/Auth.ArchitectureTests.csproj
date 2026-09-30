@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    AD-3: layering enforced by tests. Always run against a Debug build - ArchUnitNET
+    issue #498 drops async dependencies in Release builds, which would hide real
+    violations. Configuration defaults to Debug here; CI may also pass -c Debug explicitly.
+  -->
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Auth.Domain\Auth.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Auth.Application\Auth.Application.csproj" />
+    <ProjectReference Include="..\..\src\Auth.Infrastructure\Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Auth.Api\Auth.Api.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,32 @@
+# Dev-only differences (AD-19). Compose merges this automatically on `docker compose up`.
+# Everything else (topology, health checks, dependency order) comes from docker-compose.yml.
+
+services:
+  auth-migrate:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+  auth-api:
+    build:
+      target: dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+    volumes:
+      - ./apps/auth-api:/src/apps/auth-api
+      - ./libs:/src/libs
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - ./Directory.Packages.props:/src/Directory.Packages.props
+      - ./global.json:/src/global.json
+      - auth-api-bin:/src/apps/auth-api/src/Auth.Api/bin
+      - auth-api-obj:/src/apps/auth-api/src/Auth.Api/obj
+    ports:
+      - "5001:8080"
+
+  auth-db:
+    ports:
+      - "5432:5432"
+
+volumes:
+  auth-api-bin:
+  auth-api-obj:

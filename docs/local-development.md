@@ -2,7 +2,7 @@
 
 Binding rules: spine AD-12, AD-17, AD-19.
 
-> Status: the commands below describe the planned setup. They start working once the scaffold story lands.
+> Status: the scaffold is in place — Nx workspace, the .NET solution, auth-api's four hexagonal projects, the gateway, the compose topology and CI all build and run as described below. No capability (CAP-1…CAP-8) is implemented yet: only `/health/live` and `/health/ready` respond for real. The routes in [services.md](services.md) are the target surface from the spec, not yet live.
 
 ## Prerequisites
 
@@ -56,3 +56,9 @@ Binding rules: spine AD-12, AD-17, AD-19.
 ## Health
 
 - `/health/live` and `/health/ready` exist on each service's internal network only. Compose uses them to order startup: `auth-db` healthy → `auth-migrate` done → `auth-api` ready → `gateway`.
+
+## Gotchas found during scaffolding
+
+- **`.dockerignore`'s `bin/`/`obj/` didn't work as written.** Unlike `.gitignore`, a bare `bin/`/`obj/` in `.dockerignore` only matches at the build-context root, not nested per-project folders — so the host's `apps/*/src/*/obj/project.assets.json` (baked with Windows-only NuGet paths) was leaking into the Linux build and breaking `dotnet publish` inside the container. Fixed with `**/bin/`/`**/obj/`. If a Docker build ever fails with a `FallbackPackagePathResolver`/NuGet path error, this is almost certainly why.
+- **The gateway's health check used `wget --spider`, which sends `HEAD`.** The Minimal API health endpoints are `MapGet`-only and reject `HEAD` with `405`, so `auth-api` never went healthy under the original compose healthcheck. Fixed by dropping `--spider` for a real `GET` to `/dev/null`.
+- **`proxy_pass` needs a variable, not a literal hostname, for AD-14's "resolves upstreams at request time" to actually hold.** `proxy_pass http://auth-api:8080;` makes nginx resolve `auth-api` once via the system resolver — outside compose (or before `auth-api` is reachable) `nginx -t`/startup fails hard with `host not found in upstream`. Fixed with `set $auth_upstream "..."; proxy_pass $auth_upstream;`, which defers resolution to the `resolver 127.0.0.11` directive at request time.

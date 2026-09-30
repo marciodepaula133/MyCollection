@@ -1,0 +1,92 @@
+# Production-shaped topology (AD-19). Dev-only differences live exclusively in
+# docker-compose.override.yml, which compose merges in automatically for `docker compose up`.
+name: mycollection
+
+networks:
+  mycollection:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${MYCOLLECTION_SUBNET:-172.28.0.0/16}
+
+volumes:
+  auth-db-data:
+  auth-dataprotection-keys:
+
+services:
+  auth-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auth}
+      POSTGRES_USER: ${POSTGRES_USER:-auth_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - auth-db-data:/var/lib/postgresql
+    networks:
+      - mycollection
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auth_owner} -d ${POSTGRES_DB:-auth}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-migrate:
+    build:
+      context: .
+      dockerfile: apps/auth-api/Dockerfile
+      target: migrate
+    environment:
+      ConnectionStrings__Postgres: ${ConnectionStrings__PostgresMigration:?}
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    networks:
+      - mycollection
+    restart: "no"
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: apps/auth-api/Dockerfile
+      target: final
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Postgres: ${ConnectionStrings__Postgres:?}
+      Jwt__SigningKeyPath: ${Jwt__SigningKeyPath:?}
+      Authentication__Google__ClientId: ${Authentication__Google__ClientId:-}
+      Authentication__Google__ClientSecret: ${Authentication__Google__ClientSecret:-}
+      Authentication__Discord__ClientId: ${Authentication__Discord__ClientId:-}
+      Authentication__Discord__ClientSecret: ${Authentication__Discord__ClientSecret:-}
+      Frontend__AuthCallbackUrl: ${Frontend__AuthCallbackUrl:?}
+      ForwardedHeaders__KnownIPNetworks: ${ForwardedHeaders__KnownIPNetworks:?}
+    volumes:
+      - auth-dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      auth-migrate:
+        condition: service_completed_successfully
+    networks:
+      - mycollection
+    healthcheck:
+      # No --spider: busybox wget's --spider issues a HEAD request, and the Minimal API
+      # MapGet endpoints below only handle GET, so --spider gets a 405 forever. A real
+      # GET to /dev/null is the portable check.
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8080/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/gateway/Dockerfile
+    environment:
+      GATEWAY_CORS_ORIGINS: ${GATEWAY_CORS_ORIGINS:-http://localhost:8080}
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-api:
+        condition: service_healthy
+    networks:
+      - mycollection

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Application: use cases, port interfaces, service-owned error codes.
+    References only Domain and MyCollection.Results (AD-2) - never EF Core, ASP.NET Core
+    or Infrastructure.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Auth.Domain\Auth.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\libs\MyCollection.Results\MyCollection.Results.csproj" />
+  </ItemGroup>
+
+</Project>

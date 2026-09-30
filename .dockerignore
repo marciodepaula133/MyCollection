@@ -1,0 +1,24 @@
+# Build artifacts from running dotnet natively on the host - never let these leak into a
+# Docker build context. A stale obj/project.assets.json baked with host-specific paths
+# (e.g. Windows NuGet fallback folders) silently breaks the in-container restore/publish.
+# Unlike .gitignore, a bare `bin/`/`obj/` here only matches at the context root - dockerignore
+# needs the explicit `**/` to reach the per-project bin/obj folders nested under apps/ and libs/.
+**/bin/
+**/obj/
+
+# Node / Nx
+node_modules/
+.nx/cache/
+.nx/workspace-data/
+dist/
+
+# VCS and editor
+.git/
+.vs/
+.idea/
+
+# Never send local secrets into a build context either
+.env
+*.pem
+*.key
+keys/

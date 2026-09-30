@@ -15,6 +15,10 @@ Binding rules: spine AD-3 and AD-20. Framework: **xUnit v3** on the Microsoft Te
 - **Architecture:** "`Auth.Domain` depends on nothing"; "`Auth.Application` does not depend on `Microsoft.EntityFrameworkCore`"; "`Auth.Api` endpoints do not use `DbContext`". Always run them against a **Debug** build (in Release, ArchUnitNET misses async dependencies, issue #498). They also check each layer's `.csproj` references.
 - **Integration (concurrency):** two parallel refreshes with the same cookie must not fork the family.
 
+## Status note
+
+`Auth.ArchitectureTests`' five layering rules currently carry `.WithoutRequiringPositiveResults()`. ArchUnitNET fails a rule by default when its target set is empty ("requires positive evaluation," a typo-catching safety net), and every layer is still an empty scaffold — so without that call, all five would fail today for the wrong reason. Remove it layer by layer as CAP-1 adds real classes; until then these tests pass vacuously rather than asserting anything.
+
 ## Running
 
 - `nx test <Project>` for one project, `nx affected -t test` for whatever a change touched. CI runs `nx affected -t build test`.
