@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Restore .NET packages
+        run: dotnet restore MyCollection.slnx
+
       - name: nx affected - build & test
         run: npx nx affected -t build test
 
