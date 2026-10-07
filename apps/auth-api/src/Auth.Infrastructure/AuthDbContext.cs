@@ -1,16 +1,22 @@
+using Auth.Domain;
+using Auth.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Infrastructure;
 
-/// <summary>
-/// Empty for this setup slice. AD-12 needs a real DbContext to wire the migration-bundle
-/// mechanism (dotnet-ef, IDesignTimeDbContextFactory) ahead of CAP-1, which adds the first
-/// entity, DbSet and migration.
-/// </summary>
 public class AuthDbContext : DbContext
 {
     public AuthDbContext(DbContextOptions<AuthDbContext> options)
         : base(options)
     {
+    }
+
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<UserCredential> UserCredentials => Set<UserCredential>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuthDbContext).Assembly);
     }
 }
