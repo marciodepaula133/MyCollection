@@ -1,8 +1,11 @@
+using Auth.Api.Endpoints;
+using Auth.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddAuthInfrastructure();
 
 var app = builder.Build();
 
@@ -12,11 +15,12 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-// Minimal, unconditionally-healthy stubs (no DbContext exists yet, so there is no
-// pending-migrations or database check to run). AD-19 compose gates gateway startup
-// on this reporting healthy; a real check is added alongside CAP-1.
+// Live: the process is up. Ready: the database is reachable and fully migrated (AD-12).
+// AD-19 compose gates gateway startup on ready.
 app.MapGet("/health/live", () => Results.Ok());
-app.MapGet("/health/ready", () => Results.Ok());
+app.MapHealthChecks("/health/ready");
+
+app.MapGroup("/api/auth").MapRegister();
 
 app.Run();
 
