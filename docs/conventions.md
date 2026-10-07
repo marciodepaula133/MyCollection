@@ -62,6 +62,10 @@ libs/MyCollection.ServiceDefaults/   # ASP.NET plumbing shared by every service
 - Other services store a user reference as the JWT `sub` string.
 - Emails are trimmed and lower-cased before storing or comparing.
 
+## Passwords and emails
+
+See [auth.md § Account linking](auth.md#account-linking) for the register rules: 8 to 32 character passwords, `EnhancedHashPassword`/`EnhancedVerify`, normalized emails.
+
 ## Packages
 
 - Versions live **only** in `Directory.Packages.props`. A `.csproj` says `<PackageReference Include="X" />` with no version.

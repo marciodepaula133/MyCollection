@@ -47,6 +47,8 @@ Binding rules: spine AD-12, AD-17, AD-19.
 - Add one: `dotnet ef migrations add <Name> --project apps/auth-api/src/Auth.Infrastructure --startup-project apps/auth-api/src/Auth.Api`.
 - Apply: migrations run only through the one-shot `auth-migrate` service (an EF migration bundle from the Dockerfile `migrate` target, connecting as the DB owner). After adding a migration, run `docker compose up --build auth-migrate`. The app never migrates itself; it connects as `auth_app` (data-only rights), and `/health/ready` stays unhealthy while migrations are pending.
 
+The `auth_app` role is created by `apps/auth-api/db/init.sql`, mounted into `auth-db`; see [database.md](database.md). It runs only on an empty data volume, so after editing it run `docker compose down -v` (this deletes local data).
+
 ## Logs
 
 - `docker compose logs -f` shows everything, prefixed by service; `docker compose logs -f auth-api` shows one service.
