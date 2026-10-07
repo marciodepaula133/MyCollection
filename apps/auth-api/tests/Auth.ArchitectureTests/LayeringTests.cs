@@ -9,31 +9,31 @@ namespace Auth.ArchitectureTests;
 
 /// <summary>
 /// AD-3: the hexagonal layering rules from AD-2, enforced by tests rather than only by
-/// convention. The layers are still empty at this point in the setup slice, so most rules
-/// pass vacuously - they exist so the first real class added in each layer is checked
-/// immediately.
+/// convention. Every rule must evaluate at least one type (ArchUnitNET's
+/// default), so a typo in a predicate fails loudly instead of passing vacuously.
 /// </summary>
 public class LayeringTests
 {
+    private static readonly System.Reflection.Assembly DomainAssembly = System.Reflection.Assembly.Load("Auth.Domain");
+    private static readonly System.Reflection.Assembly ApplicationAssembly = System.Reflection.Assembly.Load("Auth.Application");
+    private static readonly System.Reflection.Assembly InfrastructureAssembly = System.Reflection.Assembly.Load("Auth.Infrastructure");
+    private static readonly System.Reflection.Assembly ApiAssembly = System.Reflection.Assembly.Load("Auth.Api");
+
     private static readonly Architecture Architecture = new ArchLoader()
-        .LoadAssemblies(
-            System.Reflection.Assembly.Load("Auth.Domain"),
-            System.Reflection.Assembly.Load("Auth.Application"),
-            System.Reflection.Assembly.Load("Auth.Infrastructure"),
-            System.Reflection.Assembly.Load("Auth.Api"))
+        .LoadAssemblies(DomainAssembly, ApplicationAssembly, InfrastructureAssembly, ApiAssembly)
         .Build();
 
     private static readonly IObjectProvider<IType> DomainTypes =
-        Types().That().ResideInAssembly("Auth.Domain").As("Domain types");
+        Types().That().ResideInAssembly(DomainAssembly).As("Domain types");
 
     private static readonly IObjectProvider<IType> ApplicationTypes =
-        Types().That().ResideInAssembly("Auth.Application").As("Application types");
+        Types().That().ResideInAssembly(ApplicationAssembly).As("Application types");
 
     private static readonly IObjectProvider<IType> InfrastructureTypes =
-        Types().That().ResideInAssembly("Auth.Infrastructure").As("Infrastructure types");
+        Types().That().ResideInAssembly(InfrastructureAssembly).As("Infrastructure types");
 
     private static readonly IObjectProvider<IType> ApiTypes =
-        Types().That().ResideInAssembly("Auth.Api").As("Api types");
+        Types().That().ResideInAssembly(ApiAssembly).As("Api types");
 
     // ResideInNamespace in this ArchUnitNET version matches on exact namespace only (no regex
     // overload), so nested namespaces like Microsoft.EntityFrameworkCore.Design are matched via
@@ -50,27 +50,21 @@ public class LayeringTests
     // into one forbidden set is built with .Or() at the predicate ("That()") level, not by
     // combining already-built IObjectProvider instances (which has no .Or() extension).
     private static readonly IObjectProvider<IType> ApplicationOrInfrastructureOrApiTypes =
-        Types().That().ResideInAssembly("Auth.Application")
-            .Or().ResideInAssembly("Auth.Infrastructure")
-            .Or().ResideInAssembly("Auth.Api")
+        Types().That().ResideInAssembly(ApplicationAssembly)
+            .Or().ResideInAssembly(InfrastructureAssembly)
+            .Or().ResideInAssembly(ApiAssembly)
             .As("Application, Infrastructure or Api types");
 
     private static readonly IObjectProvider<IType> EfCoreOrInfrastructureTypes =
         Types().That().HaveFullNameContaining("Microsoft.EntityFrameworkCore")
-            .Or().ResideInAssembly("Auth.Infrastructure")
+            .Or().ResideInAssembly(InfrastructureAssembly)
             .As("EF Core or Infrastructure types");
-
-    // ArchUnitNET fails a rule by default if its "given" set matches zero types ("requires
-    // positive evaluation"), to catch predicate typos. Every layer is still empty at this
-    // point in the setup slice, so every rule here is vacuous today - .WithoutRequiringPositiveResults()
-    // opts out of that check; the rule still fires for real once CAP-1 adds actual classes.
 
     [Fact]
     public void Domain_does_not_depend_on_any_other_layer()
     {
         Types().That().Are(DomainTypes)
             .Should().NotDependOnAny(ApplicationOrInfrastructureOrApiTypes)
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -79,7 +73,6 @@ public class LayeringTests
     {
         Types().That().Are(ApplicationTypes)
             .Should().NotDependOnAny(InfrastructureTypes)
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -88,7 +81,6 @@ public class LayeringTests
     {
         Types().That().Are(ApplicationTypes)
             .Should().NotDependOnAny(EfCoreTypes)
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -97,7 +89,6 @@ public class LayeringTests
     {
         Types().That().Are(ApplicationTypes)
             .Should().NotDependOnAny(AspNetCoreTypes)
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 
@@ -108,7 +99,6 @@ public class LayeringTests
         // directly; every other Api type must not.
         Types().That().Are(ApiTypes).And().DoNotHaveName("Program")
             .Should().NotDependOnAny(EfCoreOrInfrastructureTypes)
-            .WithoutRequiringPositiveResults()
             .Check(Architecture);
     }
 }
