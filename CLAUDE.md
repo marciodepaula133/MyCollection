@@ -9,7 +9,7 @@ MyCollection: an Nx monorepo of .NET 10 microservices behind an Nginx gateway, f
 | Need | File |
 |---|---|
 | Binding architecture rules (`AD-n`), pinned versions, deferred items | [ARCHITECTURE-SPINE.md](_bmad-output/planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md) |
-| What the current slice must deliver (`CAP-n`) | [SPEC.md](_bmad-output/specs/spec-mycollection-platform/SPEC.md) |
+| What the current slice must deliver (`CAP-n`) | [SPEC.md](_bmad-output/specs/auth/spec-mycollection-platform/SPEC.md) |
 | Code placement, errors, naming, config, logging | [docs/conventions.md](docs/conventions.md) |
 | Auth flows, tokens, cookies, linking rules | [docs/auth.md](docs/auth.md) |
 | Running, debugging, ports, migrations | [docs/local-development.md](docs/local-development.md) |

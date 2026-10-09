@@ -10,8 +10,8 @@ created: '2026-09-26'
 updated: '2026-09-26'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8]
 sources:
-  - ../../../specs/spec-mycollection-platform/SPEC.md
-  - ../../../specs/spec-mycollection-platform/stack.md
+  - ../../../specs/auth/spec-mycollection-platform/SPEC.md
+  - ../../../specs/auth/spec-mycollection-platform/stack.md
   - ../../../../docs/history/initial-analysis-plan.md
 companions: []
 ---
@@ -316,7 +316,7 @@ MyCollection/
 ## Deferred
 
 - **Production deployment and hosting**: target platform, TLS termination at the gateway, secret store for the signing key and OAuth secrets. *Revisit when the first deployment is planned.* AD-12, AD-17 and AD-19 already fix the production-shaped parts.
-- **Email identity** (email verification, password reset, SMTP via MailKit, Mailpit in dev, Brevo as the production SMTP relay on its free tier): its own spec, `spec-email-identity`. It closes AD-10's accepted squatting gap. Templates stay as HTML built in application code and sent as the SMTP body, not the provider's dashboard editor, so the relay stays swappable via SMTP host/credentials alone.
+- **Email identity** (email verification, password reset, SMTP via MailKit, Brevo as the SMTP relay in dev and production on its free tier, using a separate named SMTP key per environment; integration tests use a faked SMTP): its own spec, `spec-email-identity`. It closes AD-10's accepted squatting gap. Templates stay as HTML built in application code and sent as the SMTP body, not the provider's dashboard editor, so the relay stays swappable via SMTP host/credentials alone.
 - **Signing-key rotation procedure**: the `kid` and JWKS mechanism exists; a single dev key is enough for now.
 - **Observability beyond stdout logs** (central log UI such as Seq or Loki, metrics, tracing): roadmap phase 6.
 - **E2E tests** (including a mock OAuth2 server): after the first slice ships.

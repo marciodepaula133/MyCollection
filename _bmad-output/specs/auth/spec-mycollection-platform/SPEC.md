@@ -3,9 +3,9 @@ id: SPEC-mycollection-platform
 companions:
   - stack.md
   - architecture-diagrams.md
-  - ../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md
+  - ../../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md
 sources:
-  - ../../../docs/history/initial-analysis-plan.md
+  - ../../../../docs/history/initial-analysis-plan.md
 ---
 
 > **Canonical contract.** This SPEC and the files in `companions:` are the complete, preservation-validated contract for what to build, test, and validate. Source documents listed in frontmatter are for traceability — consult them only if you need narrative rationale or prose color this contract intentionally omits.

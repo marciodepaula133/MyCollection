@@ -4,3 +4,8 @@
 *.png binary
 *.jpg binary
 *.ico binary
+
+# Agent tooling, not project source - exclude from GitHub language stats
+.agents/** linguist-vendored
+.claude/** linguist-vendored
+_bmad-output/** linguist-vendored

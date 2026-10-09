@@ -1,7 +1,7 @@
 ---
 id: SPEC-email-identity
 companions:
-  - ../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md
+  - ../../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md
 sources: []
 ---
 
@@ -43,7 +43,7 @@ A mandate to meet: `spec-mycollection-platform` explicitly deferred email verifi
 ## Constraints
 
 - Verification and reset tokens are opaque, single-use, and time-limited, following AD-8's posture: only a hash of the token is stored, never the raw value. Exact TTL and token format are implementation detail for architecture, not fixed here.
-- Delivery goes through the same SMTP path as the rest of the platform: MailKit, Mailpit in dev, Brevo as the production relay. Templates are HTML built in C# application code and sent as the SMTP body — never a provider dashboard editor — so the relay stays swappable by SMTP host/credentials alone.
+- Delivery goes through the same SMTP path as the rest of the platform: MailKit, with Brevo as the relay in dev and production (a separate named SMTP key per environment). Templates are HTML built in C# application code and sent as the SMTP body — never a provider dashboard editor — so the relay stays swappable by SMTP host/credentials alone.
 - Emails are trimmed and lower-cased before store or compare, and `users.email` stays unique (AD-10, AD-11) — this spec does not change that shape, only what sets and checks `email_verified_at`.
 - Applies the existing hexagonal split and conventions (AD-2, AD-13): `Result<T>` in Application, ProblemDetails with a stable snake_case `code` at the edge, no EF/SMTP types outside Infrastructure.
 - CAP-12 must not leak account existence through timing or response shape differences between a registered and unregistered email.
@@ -60,8 +60,8 @@ A mandate to meet: `spec-mycollection-platform` explicitly deferred email verifi
 
 ## Success signal
 
-- Integration tests (real PostgreSQL + faked SMTP/Mailpit) cover: register → verify → login unaffected; login blocked with a distinct error while unconfirmed (CAP-15); an expired or reused verification/reset token is rejected; the forgot-password response is identical for an existing vs. a non-existent email; a successful reset revokes all of the user's sessions; CAP-14 reclaim deletes the squatter's credential and links the social identity in one automatic flow; and an unconfirmed registration older than 30 days no longer blocks a fresh registration or social sign-up with that email.
-- Manual check: running `docker compose up`, Mailpit shows the verification and reset emails end-to-end for a real registration and reset.
+- Integration tests (real PostgreSQL + faked SMTP) cover: register → verify → login unaffected; login blocked with a distinct error while unconfirmed (CAP-15); an expired or reused verification/reset token is rejected; the forgot-password response is identical for an existing vs. a non-existent email; a successful reset revokes all of the user's sessions; CAP-14 reclaim deletes the squatter's credential and links the social identity in one automatic flow; and an unconfirmed registration older than 30 days no longer blocks a fresh registration or social sign-up with that email.
+- Manual check: running `docker compose up` with the dev Brevo SMTP key in `.env`, a real registration and a password reset to a mailbox you control deliver the verification and reset emails end-to-end (confirm in that mailbox or in Brevo's transactional logs).
 
 ## Open Questions
 
