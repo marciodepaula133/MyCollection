@@ -1,5 +1,6 @@
 using Auth.Api.Endpoints;
 using Auth.Infrastructure;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +19,20 @@ if (app.Environment.IsDevelopment())
 // Live: the process is up. Ready: the database is reachable and fully migrated (AD-12).
 // AD-19 compose gates gateway startup on ready.
 app.MapGet("/health/live", () => Results.Ok());
-app.MapHealthChecks("/health/ready");
+
+// A MapGet over HealthCheckService rather than MapHealthChecks: the OpenAPI generator only
+// describes handler-backed endpoints, and MapHealthChecks has none.
+app.MapGet("/health/ready", async (HealthCheckService health, CancellationToken cancellationToken) =>
+    {
+        var report = await health.CheckHealthAsync(cancellationToken);
+        return Results.Text(
+            report.Status.ToString(),
+            statusCode: report.Status == HealthStatus.Healthy
+                ? StatusCodes.Status200OK
+                : StatusCodes.Status503ServiceUnavailable);
+    })
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status503ServiceUnavailable);
 
 app.MapGroup("/api/auth").MapRegister();
 

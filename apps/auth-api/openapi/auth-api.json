@@ -17,6 +17,21 @@
         }
       }
     },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Auth.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "503": {
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
     "/api/auth/register": {
       "post": {
         "tags": [
