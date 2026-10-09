@@ -20,6 +20,16 @@ docker compose exec auth-db psql -U auth_owner -d auth     # as owner
 docker compose exec -e PGPASSWORD=<app password> auth-db psql -h localhost -U auth_app -d auth   # as the app
 ```
 
+## Existing volume without `auth_app`
+
+Postgres runs `init.sql` only when it first initialises an empty data volume. A volume created before `init.sql` existed has no `auth_app` role, and nothing re-runs the script. Create the role without losing data by running the script by hand (it reads the same environment variables from the container):
+
+```powershell
+docker compose exec auth-db psql -U auth_owner -d auth -f /docker-entrypoint-initdb.d/init.sql
+```
+
+Run it once. A second run fails because the role already exists.
+
 ## Useful commands
 
 - Check the app role cannot run DDL: as `auth_app`, `CREATE TABLE x();` fails with `permission denied for schema public`.
