@@ -39,7 +39,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/RegisterRequest"
               }
@@ -84,6 +84,13 @@
   },
   "components": {
     "schemas": {
+      "IFormFile": {
+        "type": [
+          "null",
+          "string"
+        ],
+        "format": "binary"
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -125,20 +132,49 @@
       "RegisterRequest": {
         "required": [
           "email",
-          "password"
+          "password",
+          "firstName",
+          "lastName"
         ],
         "type": "object",
         "properties": {
           "email": {
+            "maxLength": 254,
             "type": [
               "null",
               "string"
             ]
           },
           "password": {
+            "maxLength": 32,
+            "minLength": 8,
             "type": [
               "null",
               "string"
+            ]
+          },
+          "firstName": {
+            "maxLength": 100,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastName": {
+            "maxLength": 100,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "avatar": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IFormFile"
+              }
             ]
           }
         }
@@ -146,7 +182,9 @@
       "RegisterResponse": {
         "required": [
           "id",
-          "email"
+          "email",
+          "firstName",
+          "lastName"
         ],
         "type": "object",
         "properties": {
@@ -155,6 +193,12 @@
             "format": "uuid"
           },
           "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
             "type": "string"
           }
         }

@@ -1,12 +1,15 @@
 using Auth.Api.Endpoints;
 using Auth.Infrastructure;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MyCollection.ServiceDefaults;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddAuthInfrastructure();
+builder.Services.AddValidation();
+builder.Services.AddMyCollectionProblemDetails();
 
 var app = builder.Build();
 
