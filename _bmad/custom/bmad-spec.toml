@@ -8,3 +8,8 @@ activation_steps_prepend = [
 ]
 
 spec_output_path = "{output_folder}/specs/{project}"
+
+# Specs that plan code must place it per the project's code conventions.
+persistent_facts = [
+  "file:docs/conventions.md",
+]

@@ -1,6 +1,6 @@
 # Conventions
 
-Binding rules: spine AD-2 to AD-5, AD-11, AD-13 to AD-18. This is the everyday cheat sheet.
+Binding rules: spine AD-2 to AD-5, AD-11, AD-13 to AD-18, AD-23. This is the everyday cheat sheet. **Read it before creating new code** (CLAUDE.md and the BMad build/spec/review/dev skills load it).
 
 ## Layout
 
@@ -26,6 +26,25 @@ libs/MyCollection.ServiceDefaults/   # ASP.NET plumbing shared by every service
 | talks to a DB, crypto, the clock, HTTP, OAuth or the filesystem (an *adapter*) | `Infrastructure` |
 | maps HTTP ↔ use case, or wires DI in `Program.cs` | `Api` |
 
+## Files
+
+Reference layout: the register feature.
+
+```text
+Auth.Api/Endpoints/
+  RegisterEndpoint.cs       # route mapping + handler only
+  RegisterRequest.cs        # one request type per file, DataAnnotations on it
+  RegisterResponse.cs       # one response type per file
+Auth.Application/Features/Register/
+  RegisterCommand.cs        # RegisterCommand + RegisterResult may share this file
+  RegisterUseCase.cs        # the use case, plus its Error definitions while under 100 lines
+  RegisterErrors.cs         # only once RegisterUseCase.cs would reach 100 lines
+```
+
+- Each Api request and response type goes in its own file, named after the type, next to its endpoint. The endpoint file never declares contract types.
+- A use case's file may also hold its `Error` definitions (`public static readonly Error …`) and small private helpers **while the file stays under 100 lines**. When it would reach 100, move the errors to `<Feature>Errors.cs` and each helper class to its own file in the same feature folder.
+- A port interface goes in `Application/Abstractions/I<Name>.cs`. A small type that only exists for that port (e.g. `CommitOutcome` for `IUnitOfWork`) can share its file.
+
 - References go inward only: `Api → Infrastructure → Application → Domain`.
 - Endpoints never touch `DbContext`. Use cases never reference EF Core or ASP.NET.
 - Application may reference only Domain and `MyCollection.Results`.
@@ -38,14 +57,16 @@ libs/MyCollection.ServiceDefaults/   # ASP.NET plumbing shared by every service
 
 - Minimal APIs, one route group per feature, full public path: `app.MapGroup("/api/auth")`.
 - Each endpoint: parse → call one use case → map the `Result` (3–5 lines).
-- Request-shape validation (required fields, formats) happens at the edge. Business rules live in Application.
+- Request-shape validation (required fields, formats, lengths) happens at the edge, using .NET built-ins only: DataAnnotations (`[Required]`, `[EmailAddress]`, `[StringLength]`, `[Url]`, …) on the request type, enabled once per service with `builder.Services.AddValidation()`. Hand-write a check only when no built-in attribute covers it. `MyCollection.ServiceDefaults.AddMyCollectionProblemDetails()` makes the automatic failure carry this project's `code: validation_failed`/`traceId` like every other error.
+- Business rules (email already taken, limits, ownership, state transitions) live **only in Application**: the use case, or the Domain it calls. Endpoints and Infrastructure never decide a business rule. Infrastructure reports technical facts (e.g. `CommitOutcome.UniqueViolation`) and the use case decides what they mean.
+- A request that uploads a file binds `[FromForm] TRequest` with an `IFormFile`/`IFormFileCollection` property, not JSON; call `.DisableAntiforgery()` on the route (Minimal APIs require it for form-binding endpoints if antiforgery services are ever registered). Make `TRequest` a plain class with `init`-only properties, **not** a positional record: the form complex-type binder requires every record constructor parameter to have a value present and throws an unhandled `BadHttpRequestException` otherwise — bypassing `[Required]`/`AddValidation()` entirely — even for a nullable parameter with a `= null` default. A settable-property class has no such constructor to satisfy; unset properties default to `null` and `[Required]` catches them normally.
 - Routes are lowercase kebab-case. No `/v1` yet.
 
 ## Errors
 
 - Use cases return `Result<T>` from `libs/MyCollection.Results`. Expected failures (wrong password, email taken) are typed `Error(Code, Kind, Message)`, never exceptions. Exceptions mean bugs.
 - `ErrorKind` is fixed: `Validation`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `RateLimited`, `Unavailable`. ServiceDefaults maps each kind to an HTTP status; each service owns its own `code` values.
-- Unique-constraint violations (Postgres `23505`) become `Conflict`, never a 500.
+- Unique-constraint violations (Postgres `23505`) become `Conflict`, never a 500. `IUnitOfWork.CommitAsync` reports one as the neutral `CommitOutcome.UniqueViolation`, and the use case maps it to its own `Error`. Infrastructure never references a feature's errors. Use cases check the rule first (e.g. `EmailExistsAsync`) so the common case reads in the use case, and keep the commit outcome for the race.
 - Every 4xx/5xx response is **RFC 9457 ProblemDetails**:
   ```json
   { "type": "...", "title": "Invalid credentials", "status": 401,

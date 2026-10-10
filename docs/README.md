@@ -9,7 +9,7 @@ Start here. Each entry says **what questions the file answers**, so you (or an A
 | File | Read it when you need to know… |
 |---|---|
 | [overview.md](overview.md) | What MyCollection is, why it exists, the slices and roadmap, what's in or out of scope right now. |
-| [architecture.md](architecture.md) | The big picture: services, gateway, hexagonal layers, and a one-line index of every architecture decision (`AD-1`…`AD-22`) with links. |
+| [architecture.md](architecture.md) | The big picture: services, gateway, hexagonal layers, and a one-line index of every architecture decision (`AD-1`…`AD-23`) with links. |
 | [services.md](services.md) | Which services exist or are planned, their routes, ports, databases and status. |
 | [auth.md](auth.md) | How login works end to end: JWT/RS256/JWKS, refresh-token rotation and grace window, cookies, Google/Discord linking rules, what's stored. |
 | [conventions.md](conventions.md) | How to write code here: project layout per service, endpoints, `Result<T>`, error format, naming, JSON, config, logging. |

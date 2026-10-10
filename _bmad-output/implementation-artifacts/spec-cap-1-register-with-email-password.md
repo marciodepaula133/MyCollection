@@ -24,7 +24,7 @@ context: ['{project-root}/_bmad-output/planning-artifacts/architecture/architect
 - Emails are trimmed and lower-cased before compare/store; `users.email` is unique; `users.email_verified_at` stays null for password sign-ups (AD-10).
 - Passwords are bcrypt-hashed before persistence; the plaintext password is never logged or stored.
 - Ids are `Guid.CreateVersion7()`; timestamps come from the injected `TimeProvider` (UTC), never `DateTime.UtcNow`.
-- Postgres `23505` (unique violation) is translated to `Error("email_already_registered", ErrorKind.Conflict, ...)` in Infrastructure, never surfaced as a 500.
+- The use case owns the duplicate-email rule: it checks `IUserRepository.EmailExistsAsync` before hashing, and maps a neutral `CommitOutcome.UniqueViolation` from `IUnitOfWork.CommitAsync` (the race where two requests both pass the check) to `Error("email_already_registered", ErrorKind.Conflict, ...)`. Infrastructure only reports that Postgres `23505` happened; it never references a feature or its errors. Never surfaced as a 500 (renegotiated 2026-10-10).
 - The EF Core migration lives in `Auth.Infrastructure`; it is applied only by the `auth-migrate` bundle, never `Database.Migrate()`.
 - `apps/auth-api/openapi/auth-api.json` is regenerated and committed once the endpoint exists.
 - Remove `.WithoutRequiringPositiveResults()` from the `Auth.ArchitectureTests` layering rules that now have real classes to evaluate (per `docs/testing.md`'s status note).
@@ -43,7 +43,7 @@ context: ['{project-root}/_bmad-output/planning-artifacts/architecture/architect
 | Scenario | Input / State | Expected Output / Behavior | Error Handling |
 |----------|--------------|---------------------------|----------------|
 | Happy path | Well-formed email + password, no existing user with that email | `201 Created`, body `{ id, email }` (no password/hash echoed); row inserted into `users` and `user_credentials` with a bcrypt hash | N/A |
-| Duplicate email | Email (any casing/whitespace) already registered | `409` ProblemDetails, `code: email_already_registered` | Unique-violation caught in Infrastructure, mapped to `Conflict`, never a 500 |
+| Duplicate email | Email (any casing/whitespace) already registered | `409` ProblemDetails, `code: email_already_registered` | Caught by the use case's existence check; a concurrent duplicate that slips past it hits the unique index, comes back as `CommitOutcome.UniqueViolation`, and the use case maps it to the same `Conflict`. Never a 500 |
 | Malformed email | e.g. `"not-an-email"` | `400` ProblemDetails, `code: validation_failed` | Rejected at the endpoint edge, before the use case runs |
 | Email with whitespace/mixed case | `" Foo@Bar.com "` | Normalized to `foo@bar.com` before uniqueness check and storage | N/A |
 | Password shorter than 8 characters | e.g. `"short"` | `400` ProblemDetails, `code: validation_failed` | Rejected at the endpoint edge |
@@ -108,7 +108,7 @@ context: ['{project-root}/_bmad-output/planning-artifacts/architecture/architect
 ## Design Notes
 
 - Persisting two tables: `User` (Domain) has no hash field. `IUserRepository.AddAsync(User user, string passwordHash)` lets Infrastructure create the `user_credentials` row (unique `user_id`, matching the spine's one-to-one) in the same `SaveChanges`.
-- No pre-check for an existing email: insert and rely on the unique index, which is race-safe. Translate `23505` only when the violated constraint is the `users.email` index, so no other violation is mislabelled.
+- Duplicate email is checked in two places. The use case calls `EmailExistsAsync` first, which makes the rule visible where it belongs and skips the bcrypt cost for a known duplicate. The unique index stays the race-safe source of truth: `UnitOfWork` turns any Postgres `23505` into `CommitOutcome.UniqueViolation`, and the use case decides what that means. This is a return value, not an exception, per `docs/conventions.md` § Errors. Trade-off: `UnitOfWork` no longer matches the constraint name, so any unique violation during register reads as a duplicate email. The only other unique keys a register insert touches are freshly generated UUIDv7 ids, so this is accepted.
 - Edge validation (email format, password 8–32 by `string.Length`, no trimming of the password) returns the same `Error("validation_failed", ErrorKind.Validation, ...)` through the shared mapper, so 400 bodies carry `code` and `traceId` like every other error (AD-13). Bind the request with nullable fields so a missing/null field is a 400, not a framework error.
 - Startup DB/health wiring must be skipped when the OpenAPI generator runs the app (`docs/conventions.md`).
 - `init.sql` is plain SQL, so it reads the role name and password with psql's `\getenv` (psql 15+) from the container env, keeping secrets out of the file. The entrypoint runs it only when the data volume is empty; later edits need `docker compose down -v` or a manual `psql` run.
@@ -124,6 +124,8 @@ context: ['{project-root}/_bmad-output/planning-artifacts/architecture/architect
 - `docker compose down -v && docker compose up --build`, then register via `http://localhost:8080/api/auth/register` -- expected: `201`; as `auth_app`, `CREATE TABLE x()` fails with permission denied.
 
 ## Spec Change Log
+
+- 2026-10-10 -- Moved the duplicate-email decision from Infrastructure to the use case (user renegotiated the frozen intent). Added `IUserRepository.EmailExistsAsync`. Changed `IUnitOfWork.CommitAsync` from `Task<Error?>` to `Task<CommitOutcome>`. `UnitOfWork` no longer references `RegisterUseCase` or the email index name. This avoids every future unique rule piling up as a feature-specific `catch` in the shared `UnitOfWork`. KEEP: the unique index as the race-safe source of truth, the 409 contract, and one transaction per use case.
 
 ## Review Triage Log
 

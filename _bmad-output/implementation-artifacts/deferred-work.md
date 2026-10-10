@@ -11,3 +11,10 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-cap-1-register-with-email-password.md`
   summary: ErrorResults status mapping is only tested for Validation and Conflict.
   evidence: No endpoint yet returns the other kinds; add a theory test over Enum.GetValues<ErrorKind>() with the next consumer.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-register-first-last-name.md`
+  summary: Cap request size for the anonymous multipart register endpoint (avatar is discarded but still buffered).
+  evidence: No RequestSizeLimit/form limits on POST /register; found in review.
+- source_spec: `_bmad-output/implementation-artifacts/spec-register-first-last-name.md`
+  summary: Trim first/last name before storing, and document validation error keys (PascalCase) plus the 400 schema in OpenAPI.
+  evidence: " Ana " is stored padded; ProducesProblem(400) does not describe `errors`/`code`; found in review.

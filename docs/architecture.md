@@ -50,9 +50,9 @@ flowchart LR
 | AD-8 | Refresh tokens are opaque, hashed, rotated atomically, family-revoked; the 10 s reuse grace issues a sibling; 15 min / 30 days sliding / 90-day family cap. |
 | AD-9 | Refresh token only in an HttpOnly cookie; access token only in the JSON body. |
 | AD-10 | Account linking only between verified emails; provider tokens discarded. |
-| AD-11 | EF Core only in Infrastructure; UUIDv7 ids; UTC everywhere. |
+| AD-11 | EF Core only in Infrastructure; UUIDv7 ids; UTC everywhere; unique violations reach the use case as a neutral `CommitOutcome`. |
 | AD-12 | Migrations run as a separate one-shot step (`<svc>-migrate`) in every environment. |
-| AD-13 | Thin Minimal API endpoints; `Result<T>`; ProblemDetails with a stable `code`. |
+| AD-13 | Thin Minimal API endpoints; `Result<T>`; ProblemDetails with a stable `code`; request shape via .NET annotations, business rules only in Application. |
 | AD-14 | Services own the full `/api/<area>` path; the gateway routes by prefix and alone owns CORS (incl. preflight), rate limits (429), request ids and problem+json gateway errors. |
 | AD-15 | Forwarded headers are trusted only from the gateway. |
 | AD-16 | OpenAPI generated at build and committed; clients generate types from it. |
@@ -62,5 +62,6 @@ flowchart LR
 | AD-20 | Unit + integration (Testcontainers Postgres) + architecture tests, xUnit v3. |
 | AD-21 | CI runs `nx affected -t build test`, an OpenAPI drift check and `nginx -t`. |
 | AD-22 | One OAuth flow for every provider: ASP.NET handler → `/api/auth/<provider>/callback` → `/complete` → refresh cookie → redirect to the frontend. |
+| AD-23 | Each Api request/response type in its own file; use-case files stay under 100 lines, or errors and helpers move to their own files. |
 
 Rationale for each decision: see the decision log (`.memlog.md`) next to the spine.

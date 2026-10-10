@@ -23,14 +23,18 @@ public class RegisterUseCaseTests
     public async Task Happy_path_stages_user_with_hashed_password_and_commits()
     {
         var result = await _useCase.ExecuteAsync(
-            new RegisterCommand("new@user.com", "s3cret-pass"),
+            new RegisterCommand("new@user.com", "s3cret-pass", "New", "User"),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("new@user.com", result.Value.Email);
+        Assert.Equal("New", result.Value.FirstName);
+        Assert.Equal("User", result.Value.LastName);
 
         var (user, hash) = Assert.Single(_users.Added);
         Assert.Equal(result.Value.Id, user.Id);
+        Assert.Equal("New", user.FirstName);
+        Assert.Equal("User", user.LastName);
         Assert.Equal("hashed:s3cret-pass", hash);
         Assert.NotEqual("s3cret-pass", hash);
         Assert.Null(user.EmailVerifiedAt);
@@ -45,7 +49,7 @@ public class RegisterUseCaseTests
     public async Task Email_is_trimmed_and_lower_cased(string input, string expected)
     {
         var result = await _useCase.ExecuteAsync(
-            new RegisterCommand(input, "s3cret-pass"),
+            new RegisterCommand(input, "s3cret-pass", "First", "Last"),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(expected, result.Value.Email);
@@ -53,12 +57,28 @@ public class RegisterUseCaseTests
     }
 
     [Fact]
-    public async Task Duplicate_email_conflict_from_commit_is_returned_as_a_failure()
+    public async Task Existing_email_is_rejected_before_staging_or_committing()
     {
-        _unitOfWork.Failure = RegisterUseCase.EmailAlreadyRegistered;
+        _users.ExistingEmails.Add("dup@user.com");
 
         var result = await _useCase.ExecuteAsync(
-            new RegisterCommand("dup@user.com", "s3cret-pass"),
+            new RegisterCommand(" DUP@user.com ", "s3cret-pass", "First", "Last"),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("email_already_registered", result.Error!.Code);
+        Assert.Equal(ErrorKind.Conflict, result.Error.Kind);
+        Assert.Empty(_users.Added);
+        Assert.Equal(0, _unitOfWork.CommitCount);
+    }
+
+    [Fact]
+    public async Task Unique_violation_at_commit_from_a_concurrent_register_is_the_same_conflict()
+    {
+        _unitOfWork.Outcome = CommitOutcome.UniqueViolation;
+
+        var result = await _useCase.ExecuteAsync(
+            new RegisterCommand("dup@user.com", "s3cret-pass", "First", "Last"),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsFailure);
@@ -68,7 +88,12 @@ public class RegisterUseCaseTests
 
     private sealed class FakeUserRepository : IUserRepository
     {
+        public HashSet<string> ExistingEmails { get; } = [];
+
         public List<(User User, string PasswordHash)> Added { get; } = [];
+
+        public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken) =>
+            Task.FromResult(ExistingEmails.Contains(normalizedEmail));
 
         public Task AddAsync(User user, string passwordHash, CancellationToken cancellationToken)
         {
@@ -79,14 +104,14 @@ public class RegisterUseCaseTests
 
     private sealed class FakeUnitOfWork : IUnitOfWork
     {
-        public Error? Failure { get; set; }
+        public CommitOutcome Outcome { get; set; } = CommitOutcome.Committed;
 
         public int CommitCount { get; private set; }
 
-        public Task<Error?> CommitAsync(CancellationToken cancellationToken)
+        public Task<CommitOutcome> CommitAsync(CancellationToken cancellationToken)
         {
             CommitCount++;
-            return Task.FromResult(Failure);
+            return Task.FromResult(Outcome);
         }
     }
 

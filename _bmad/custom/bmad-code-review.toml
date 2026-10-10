@@ -1,0 +1,8 @@
+# Team override for bmad-code-review.
+# Reviewers check changes against the project's code conventions (file layout, validation, errors).
+
+[workflow]
+
+persistent_facts = [
+  "file:docs/conventions.md",
+]
