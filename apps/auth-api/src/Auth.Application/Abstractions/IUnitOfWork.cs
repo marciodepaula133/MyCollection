@@ -1,13 +1,19 @@
-using MyCollection.Results;
-
 namespace Auth.Application.Abstractions;
 
 public interface IUnitOfWork
 {
     /// <summary>
-    /// Writes everything staged by the repositories in one transaction. Returns the expected
-    /// persistence failure (for example a unique-constraint conflict) as an <see cref="Error"/>,
-    /// or null on success.
+    /// Writes everything staged by the repositories in one transaction. Reports an expected
+    /// persistence conflict as a <see cref="CommitOutcome"/> instead of throwing; the use case
+    /// decides what that conflict means for its feature.
     /// </summary>
-    Task<Error?> CommitAsync(CancellationToken cancellationToken);
+    Task<CommitOutcome> CommitAsync(CancellationToken cancellationToken);
+}
+
+public enum CommitOutcome
+{
+    Committed,
+
+    /// <summary>A unique constraint rejected the write; nothing was saved.</summary>
+    UniqueViolation
 }

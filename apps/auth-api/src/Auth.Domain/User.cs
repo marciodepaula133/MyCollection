@@ -10,7 +10,9 @@ public class User
 
     public string Email { get; private set; } = string.Empty;
 
-    public string? Name { get; private set; }
+    public string? FirstName { get; private set; }
+
+    public string? LastName { get; private set; }
 
     public string? AvatarUrl { get; private set; }
 
@@ -28,13 +30,16 @@ public class User
     /// <summary>
     /// Creates a password sign-up. <paramref name="normalizedEmail"/> must already be trimmed
     /// and lower-cased; <see cref="EmailVerifiedAt"/> stays null until email verification
-    /// exists (AD-10).
+    /// exists (AD-10). <paramref name="firstName"/> and <paramref name="lastName"/> are mandatory for this sign-up path, even though
+    /// the column stays nullable for other paths (e.g. future OAuth sign-ups).
     /// </summary>
-    public static User Register(string normalizedEmail, DateTimeOffset now) =>
+    public static User Register(string normalizedEmail, string firstName, string lastName, DateTimeOffset now) =>
         new()
         {
             Id = Guid.CreateVersion7(),
             Email = normalizedEmail,
+            FirstName = firstName,
+            LastName = lastName,
             CreatedAt = now,
             UpdatedAt = now
         };

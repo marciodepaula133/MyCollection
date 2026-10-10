@@ -21,18 +21,23 @@ public sealed class RegisterUseCase(
     {
         var email = NormalizeEmail(command.Email);
 
-        var user = User.Register(email, timeProvider.GetUtcNow());
-        await users.AddAsync(user, passwordHasher.Hash(command.Password), cancellationToken);
-
-        // No existence pre-check: the unique index is the race-safe source of truth, and
-        // Infrastructure reports a violation as EmailAlreadyRegistered.
-        var failure = await unitOfWork.CommitAsync(cancellationToken);
-        if (failure is not null)
+        // Checked before hashing so a known duplicate skips the bcrypt cost.
+        if (await users.EmailExistsAsync(email, cancellationToken))
         {
-            return failure;
+            return EmailAlreadyRegistered;
         }
 
-        return new RegisterResult(user.Id, user.Email);
+        var user = User.Register(email, command.FirstName, command.LastName, timeProvider.GetUtcNow());
+        await users.AddAsync(user, passwordHasher.Hash(command.Password), cancellationToken);
+
+        // A concurrent registration can pass the check above too; the unique index on
+        // users.email rejects the loser, which gets the same conflict.
+        if (await unitOfWork.CommitAsync(cancellationToken) == CommitOutcome.UniqueViolation)
+        {
+            return EmailAlreadyRegistered;
+        }
+
+        return new RegisterResult(user.Id, user.Email, user.FirstName!, user.LastName!);
     }
 
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
