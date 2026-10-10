@@ -17,7 +17,8 @@ namespace Auth.Infrastructure.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    first_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    last_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     avatar_url = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: true),
                     email_verified_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),

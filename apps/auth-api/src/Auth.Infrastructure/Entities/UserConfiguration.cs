@@ -14,7 +14,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasKey(u => u.Id);
         builder.Property(u => u.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(u => u.Email).HasColumnName("email").HasMaxLength(254).IsRequired();
-        builder.Property(u => u.Name).HasColumnName("name").HasMaxLength(200);
+        builder.Property(u => u.FirstName).HasColumnName("first_name").HasMaxLength(100);
+        builder.Property(u => u.LastName).HasColumnName("last_name").HasMaxLength(100);
         builder.Property(u => u.AvatarUrl).HasColumnName("avatar_url").HasMaxLength(2048);
         builder.Property(u => u.EmailVerifiedAt).HasColumnName("email_verified_at");
         builder.Property(u => u.CreatedAt).HasColumnName("created_at");

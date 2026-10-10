@@ -1,34 +1,27 @@
 using Auth.Application.Abstractions;
-using Auth.Application.Features.Register;
-using Auth.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
-using MyCollection.Results;
 using Npgsql;
 
 namespace Auth.Infrastructure;
 
 public sealed class UnitOfWork(AuthDbContext db) : IUnitOfWork
 {
-    public async Task<Error?> CommitAsync(CancellationToken cancellationToken)
+    public async Task<CommitOutcome> CommitAsync(CancellationToken cancellationToken)
     {
         try
         {
-            // One SaveChanges is one transaction: the user and its credentials land together.
+            // One SaveChanges is one transaction: everything staged lands together or not at all.
             await db.SaveChangesAsync(cancellationToken);
-            return null;
+            return CommitOutcome.Committed;
         }
-        catch (DbUpdateException ex) when (IsEmailUniqueViolation(ex))
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
-            return RegisterUseCase.EmailAlreadyRegistered;
+            SqlState: PostgresErrorCodes.UniqueViolation
+        })
+        {
+            // Report the fact only; the use case decides what the conflict means.
+            db.ChangeTracker.Clear();
+            return CommitOutcome.UniqueViolation;
         }
     }
-
-    // 23505 = unique_violation. Matching the constraint name keeps any other unique
-    // violation from being mislabelled as a duplicate email.
-    private static bool IsEmailUniqueViolation(DbUpdateException ex) =>
-        ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: UserConfiguration.EmailIndexName
-        };
 }
