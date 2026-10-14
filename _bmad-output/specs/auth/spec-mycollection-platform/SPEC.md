@@ -3,9 +3,10 @@ id: SPEC-mycollection-platform
 companions:
   - stack.md
   - architecture-diagrams.md
-  - ../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md
+  - ../../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md
+  - ../../../../docs/conventions.md
 sources:
-  - ../../../docs/history/initial-analysis-plan.md
+  - ../../../../docs/history/initial-analysis-plan.md
 ---
 
 > **Canonical contract.** This SPEC and the files in `companions:` are the complete, preservation-validated contract for what to build, test, and validate. Source documents listed in frontmatter are for traceability — consult them only if you need narrative rationale or prose color this contract intentionally omits.
@@ -52,6 +53,7 @@ A vision to realize, serving two goals equally. The first is a card-collection t
 - Access tokens are short-lived and refresh tokens are long-lived.
 - Secrets (the RS256 JWT private key, OAuth client secrets) come from environment configuration or mounted files, never from source code.
 - The architecture spine (companion) is binding for how every capability is built.
+- Code follows [docs/conventions.md](../../../../docs/conventions.md) (companion): request shape is validated with .NET DataAnnotations, business rules live only in Application, each Api request and response type has its own file, and use-case files stay under 100 lines (AD-11, AD-13, AD-23).
 - The Wishlist Service (MongoDB) and Cards BFF (Redis plus external card and price APIs) must be addable to the repo, the gateway and compose without restructuring.
 
 ## Non-goals
@@ -74,6 +76,8 @@ A vision to realize, serving two goals equally. The first is a card-collection t
 - Token lifetimes: 15 min access, 30 days sliding refresh, rotated on every use with a 10 s reuse grace window (AD-8).
 - Social login links automatically only between verified emails. It is refused for unverified provider emails and for unverified password accounts. Email squatting is an accepted gap until `spec-email-identity` (AD-10).
 - Provider access tokens are discarded after login (AD-10).
+- A duplicate email is rejected by the use case. Concurrent duplicates are settled by the unique index, reported as a neutral commit outcome and mapped to the same conflict by the use case (AD-11).
+- Request-shape validation uses .NET annotations at the edge; business rules live only in Application (AD-13).
 
 ## Open Questions
 

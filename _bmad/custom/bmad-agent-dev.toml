@@ -1,0 +1,8 @@
+# Team override for bmad-agent-dev.
+# Loads the project's code conventions (file layout, validation, errors) before any code is written.
+
+[agent]
+
+persistent_facts = [
+  "file:docs/conventions.md",
+]

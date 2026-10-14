@@ -1,7 +1,7 @@
 # Architecture Spine Review (rubric): MyCollection platform
 
 - **Reviewed:** `../ARCHITECTURE-SPINE.md` (draft, 2026-09-26)
-- **Against:** `specs/spec-mycollection-platform/SPEC.md`, `stack.md`, decision log `../.memlog.md`
+- **Against:** `specs/auth/spec-mycollection-platform/SPEC.md`, `stack.md`, decision log `../.memlog.md`
 - **Reviewer stance:** independent, good-spine checklist. The spec's `docker-compose.dev.yml`, Postgres 16 and `Jwt__Secret` are intentionally superseded and are not counted as findings.
 
 ## Verdict

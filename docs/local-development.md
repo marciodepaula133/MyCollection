@@ -37,15 +37,17 @@ Binding rules: spine AD-12, AD-17, AD-19.
 
 - Copy `.env.example` to `.env` (gitignored) and fill in the Google/Discord client ids and secrets.
 - Generate the dev JWT signing key with the script in `tools/`. The PEM is mounted into auth-api and never committed.
-- IDE mode: the non-secret defaults are in `appsettings.Development.json`; set secrets with `dotnet user-secrets set "Google:ClientSecret" "..." --project apps/auth-api/src/Auth.Api`.
+- IDE mode: the non-secret defaults are in `appsettings.Development.json`. Its `ConnectionStrings:Postgres` points at `localhost:5432` as `auth_app` with the placeholder password from `.env.example` (`change-me-app`). If your `.env` uses a different `AUTH_APP_DB_PASSWORD`, override it with `dotnet user-secrets set "ConnectionStrings:Postgres" "..." --project apps/auth-api/src/Auth.Api`. Start the database first: `docker compose up -d auth-db auth-migrate` (this also applies all migrations). Other secrets, for example: `dotnet user-secrets set "Google:ClientSecret" "..." --project apps/auth-api/src/Auth.Api`.
 - OAuth redirect URIs to register with Google/Discord (dev), gateway and direct: `http://localhost:8080/api/auth/<provider>/callback` and `http://localhost:5001/api/auth/<provider>/callback`.
 - Use Chrome, Edge or Firefox in dev. Safari drops `Secure` cookies over plain HTTP.
 
 ## Migrations
 
 - Tools: `dotnet tool restore` installs the pinned `dotnet-ef`.
-- Add one: `dotnet ef migrations add <Name> --project apps/auth-api/src/Auth.Infrastructure --startup-project apps/auth-api/src/Auth.Api`.
-- Apply: migrations run only through the one-shot `auth-migrate` service (an EF migration bundle from the Dockerfile `migrate` target, connecting as the DB owner). After adding a migration, run `docker compose up --build auth-migrate`. The app never migrates itself; it connects as `auth_app` (data-only rights), and `/health/ready` stays unhealthy while migrations are pending.
+- Add one: `dotnet ef migrations add <Name> --project apps/auth-api/src/Auth.Infrastructure --startup-project apps/auth-api/src/Auth.Infrastructure`.
+- Apply: migrations run only through the one-shot `auth-migrate` service (an EF migration bundle from the Dockerfile `migrate` target, connecting as the DB owner). The bundle is compiled into the `auth-migrate` image, so it only knows the migrations that existed when the image was last built. `auth-migrate` has `pull_policy: build` in `docker-compose.yml`, so every `up` rebuilds it (Docker's cache makes that near-instant when nothing changed) and new migrations are applied automatically. No `--build` flag needed. The app never migrates itself; it connects as `auth_app` (data-only rights), and `/health/ready` stays unhealthy while migrations are pending.
+
+The `auth_app` role is created by `apps/auth-api/db/init.sql`, mounted into `auth-db`; see [database.md](database.md). It runs only on an empty data volume, so after editing it run `docker compose down -v` (this deletes local data).
 
 ## Logs
 

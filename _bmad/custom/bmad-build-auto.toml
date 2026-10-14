@@ -1,0 +1,8 @@
+# Team override for bmad-build-auto.
+# Loads the project's code conventions (file layout, validation, errors) before any code is written.
+
+[workflow]
+
+persistent_facts = [
+  "file:docs/conventions.md",
+]

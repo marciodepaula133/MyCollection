@@ -1,6 +1,6 @@
 # Stack and reference detail
 
-> **Superseded where it differs** by the [architecture spine](../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md), which pins versions, layout and compose shape. This file keeps the reference detail carried over from the source notes.
+> **Superseded where it differs** by the [architecture spine](../../../planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md), which pins versions, layout and compose shape. This file keeps the reference detail carried over from the source notes.
 
 The implementation shape comes from the source notes. Items marked *later* belong to future slices and are listed so the current slice leaves room for them.
 
@@ -34,7 +34,7 @@ Services serve the full `/api/auth/...` path themselves; the gateway doesn't rew
 ## PostgreSQL schema
 
 ```
-users            id UUIDv7 PK, email UNIQUE, name, avatar_url, email_verified_at, created_at, updated_at
+users            id UUIDv7 PK, email UNIQUE, first_name, last_name, avatar_url, email_verified_at, created_at, updated_at
 user_credentials id PK, user_id FK→users, password_hash (bcrypt)
 user_oauth       id PK, user_id FK→users, provider (google|discord), provider_user_id, email, linked_at
 refresh_tokens   id PK, user_id FK→users, family_id, token_hash (SHA-256), expires_at, consumed_at, revoked_at
@@ -56,7 +56,7 @@ Cards BFF: `GET /cards/search?name=`, `GET /cards/:cardId` (details plus price),
 /api/cards/*     → Cards BFF          (later)
 ```
 
-The gateway is also responsible for CORS, global rate limiting and request logging. JWT validation is an open question.
+The gateway is also responsible for CORS, global rate limiting and request logging. It does no JWT validation; each service validates tokens itself (spine AD-6).
 
 ## Local dev
 

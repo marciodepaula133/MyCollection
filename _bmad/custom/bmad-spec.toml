@@ -1,0 +1,15 @@
+# Team override for bmad-spec.
+# Organizes specs into per-project folders under {output_folder}/specs/.
+
+[workflow]
+
+activation_steps_prepend = [
+  "Before resolving the spec workspace: determine which project this spec belongs to — one of auth, wishlist, bff, wishlist-front. If the user's input already names or clearly implies one, use it; otherwise ask explicitly. Bind the answer to {project} and use it when resolving spec_output_path below.",
+]
+
+spec_output_path = "{output_folder}/specs/{project}"
+
+# Specs that plan code must place it per the project's code conventions.
+persistent_facts = [
+  "file:docs/conventions.md",
+]

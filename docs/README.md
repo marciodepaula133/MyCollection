@@ -9,10 +9,11 @@ Start here. Each entry says **what questions the file answers**, so you (or an A
 | File | Read it when you need to know… |
 |---|---|
 | [overview.md](overview.md) | What MyCollection is, why it exists, the slices and roadmap, what's in or out of scope right now. |
-| [architecture.md](architecture.md) | The big picture: services, gateway, hexagonal layers, and a one-line index of every architecture decision (`AD-1`…`AD-22`) with links. |
+| [architecture.md](architecture.md) | The big picture: services, gateway, hexagonal layers, and a one-line index of every architecture decision (`AD-1`…`AD-23`) with links. |
 | [services.md](services.md) | Which services exist or are planned, their routes, ports, databases and status. |
 | [auth.md](auth.md) | How login works end to end: JWT/RS256/JWKS, refresh-token rotation and grace window, cookies, Google/Discord linking rules, what's stored. |
 | [conventions.md](conventions.md) | How to write code here: project layout per service, endpoints, `Result<T>`, error format, naming, JSON, config, logging. |
+| [database.md](database.md) | Which Postgres roles exist and what each may do, how to connect locally, local DB commands, and where data persists. |
 | [testing.md](testing.md) | Test layers (unit, integration, architecture), tools, what goes where. |
 | [local-development.md](local-development.md) | How to run things: full stack, one service, IDE debugging, ports, secrets, migrations, logs, health checks. |
 | [glossary.md](glossary.md) | Terms used across the docs (BFF, JWKS, port/adapter, ProblemDetails, UUIDv7…). |
@@ -24,9 +25,9 @@ Start here. Each entry says **what questions the file answers**, so you (or an A
 |---|---|---|
 | **Architecture spine** (binding) | [`_bmad-output/planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md`](../_bmad-output/planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/ARCHITECTURE-SPINE.md) | You need the exact rule for a decision (`AD-n`), pinned versions, or what's deferred. |
 | Architecture decision log | [`…/architecture-MyCollection-API-2026-09-26/.memlog.md`](../_bmad-output/planning-artifacts/architecture/architecture-MyCollection-API-2026-09-26/.memlog.md) | You need **why** a decision was made. |
-| **Platform spec** | [`_bmad-output/specs/spec-mycollection-platform/SPEC.md`](../_bmad-output/specs/spec-mycollection-platform/SPEC.md) | You need the capabilities (`CAP-n`) and success criteria of the current slice. |
-| Spec companions | [`stack.md`](../_bmad-output/specs/spec-mycollection-platform/stack.md), [`architecture-diagrams.md`](../_bmad-output/specs/spec-mycollection-platform/architecture-diagrams.md) | Endpoint lists, schema sketch, later-slice interfaces. |
-| **Email-identity spec** (phase 2, not yet built) | [`_bmad-output/specs/spec-email-identity/SPEC.md`](../_bmad-output/specs/spec-email-identity/SPEC.md) | You need the capabilities for email verification, unconfirmed-account login blocking and expiry, password reset, or the social-login reclaim of a squatted account (`CAP-9`…`CAP-16`). |
+| **Platform spec** | [`_bmad-output/specs/auth/spec-mycollection-platform/SPEC.md`](../_bmad-output/specs/auth/spec-mycollection-platform/SPEC.md) | You need the capabilities (`CAP-n`) and success criteria of the current slice. |
+| Spec companions | [`stack.md`](../_bmad-output/specs/auth/spec-mycollection-platform/stack.md), [`architecture-diagrams.md`](../_bmad-output/specs/auth/spec-mycollection-platform/architecture-diagrams.md) | Endpoint lists, schema sketch, later-slice interfaces. |
+| **Email-identity spec** (phase 2, not yet built) | [`_bmad-output/specs/auth/spec-email-identity/SPEC.md`](../_bmad-output/specs/auth/spec-email-identity/SPEC.md) | You need the capabilities for email verification, unconfirmed-account login blocking and expiry, password reset, or the social-login reclaim of a squatted account (`CAP-9`…`CAP-16`). |
 | Scaffold build record | [`_bmad-output/implementation-artifacts/spec-mycollection-platform-setup.md`](../_bmad-output/implementation-artifacts/spec-mycollection-platform-setup.md) | You need to know exactly what the initial repo/service scaffold set up, a real bug found and fixed during that build (the gateway's login/register CORS handling), or what's still pending verification. |
 
 ## Quick lookup
@@ -41,6 +42,20 @@ Start here. Each entry says **what questions the file answers**, so you (or an A
 | "Which port is which?" | [services.md](services.md) |
 | "How do I run/debug only auth-api?" | [local-development.md](local-development.md) |
 | "What's deliberately *not* decided yet?" | Spine § Deferred |
+
+## Implementing a capability (`CAP-n`)
+
+Read in this order and stop — for a single CAP this should be enough, no repo-wide exploration needed:
+
+1. Spine **§ Capability → Architecture Map** — one row per `CAP-n`: the target use case/table and the exact `AD-n` rules that bind it. Start here, every time.
+2. Only those `AD-n` sections it names (each is short and self-contained — no need to read the whole spine).
+3. [auth.md](auth.md) if the CAP touches identity/tokens; [conventions.md](conventions.md) always (layering, errors, naming, config).
+4. [testing.md](testing.md) for which test layer each behavior belongs in.
+5. Spine **§ Structural Seed → Source tree** and **→ auth-api data** for current file layout and schema, instead of re-deriving them by listing the repo.
+
+If you need to know whether a specific file/class already exists, read or grep that file directly — don't spawn a broad search agent for something this small.
+
+This order is a starting point, not a ceiling: if these docs don't settle something, go read the rest of the repo (other docs, the spine's other sections, the actual source) until you know. Never guess or state something about this codebase without having read it — a wrong assumption here is worse than a slower answer.
 
 ## Keeping this index honest
 

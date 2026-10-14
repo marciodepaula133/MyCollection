@@ -14,7 +14,7 @@ It is a **public Nx monorepo** of .NET 10 services behind one Nginx gateway. A w
 | # | Slice | Contents | Status |
 |---|---|---|---|
 | 1 | **Identity + gateway** | auth-api: register, password login, refresh, logout, Google + Discord sign-in; Nginx gateway; one-command local env | **Current**. Spec: `spec-mycollection-platform` (CAP-1…CAP-8) |
-| – | Email identity | Email verification, password reset (MailKit/SMTP, Mailpit in dev) | Planned: own spec `spec-email-identity` |
+| – | Email identity | Email verification, password reset (MailKit/SMTP, Brevo relay in dev and prod) | Planned: own spec `spec-email-identity` |
 | 2 | Wishlist | wishlist-api on MongoDB; per-user wishlist CRUD | Later |
 | 3 | Cards BFF | cards-bff aggregating Scryfall / TCGPlayer / CardMarket with a Redis cache | Later |
 | 4 | Observability | Central logs (Seq/Loki), metrics, tracing | Later (phase 6) |

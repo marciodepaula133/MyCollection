@@ -7,11 +7,11 @@ paradigm: 'Microservices behind one gateway; hexagonal (ports & adapters) inside
 scope: 'Whole MyCollection Nx monorepo; first slice = auth-api + gateway, with room for wishlist-api, cards-bff and a web UI'
 status: final
 created: '2026-09-26'
-updated: '2026-09-26'
+updated: '2026-10-10'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8]
 sources:
-  - ../../../specs/spec-mycollection-platform/SPEC.md
-  - ../../../specs/spec-mycollection-platform/stack.md
+  - ../../../specs/auth/spec-mycollection-platform/SPEC.md
+  - ../../../specs/auth/spec-mycollection-platform/stack.md
   - ../../../../docs/history/initial-analysis-plan.md
 companions: []
 ---
@@ -113,7 +113,7 @@ flowchart LR
 
 - **Binds:** all services with a database
 - **Prevents:** incompatible id schemes, time bugs across services, and EF Core leaking out of Infrastructure.
-- **Rule:** EF Core (with the Npgsql provider for Postgres) lives only in `<Svc>.Infrastructure`. Entity ids are **UUIDv7**, generated in the application (`Guid.CreateVersion7()`) before insert. Timestamps are UTC: `timestamptz` in Postgres, ISO-8601 with `Z` in JSON. Clients convert to local time. Other services store a user reference as the `sub` string. Application declares `IUnitOfWork`, and **one use case runs as one transaction**. Infrastructure translates unique-constraint violations (Postgres `23505`) into a `Conflict` error, never a 500.
+- **Rule:** EF Core (with the Npgsql provider for Postgres) lives only in `<Svc>.Infrastructure`. Entity ids are **UUIDv7**, generated in the application (`Guid.CreateVersion7()`) before insert. Timestamps are UTC: `timestamptz` in Postgres, ISO-8601 with `Z` in JSON. Clients convert to local time. Other services store a user reference as the `sub` string. Application declares `IUnitOfWork`, and **one use case runs as one transaction**. `IUnitOfWork.CommitAsync` reports a unique-constraint violation (Postgres `23505`) as the neutral `CommitOutcome.UniqueViolation`, and the use case maps it to its own `Conflict` error, never a 500. Infrastructure never references a feature's errors. A use case checks its rule first (e.g. `EmailExistsAsync`) and keeps the commit outcome for the race.
 
 ### AD-12 — Migrations run as a separate one-shot step, in every environment
 
@@ -124,8 +124,10 @@ flowchart LR
 ### AD-13 — Thin Minimal API adapters, `Result<T>`, ProblemDetails
 
 - **Binds:** every `<Svc>.Api`
-- **Prevents:** business logic in endpoints; a different error shape per service; exceptions used for control flow.
-- **Rule:** Endpoints are Minimal API route groups that only parse → call one use case → map the result. Use cases return `Result<T>` (`libs/MyCollection.Results`) with typed errors for expected failures and throw only for bugs. Every 4xx/5xx body is RFC 9457 ProblemDetails with a stable snake_case `code` (e.g. `invalid_credentials`) and `traceId`. Each service owns its codes; ServiceDefaults owns the single `ErrorKind` → HTTP status mapping. Request-shape validation happens at the edge; business rules live in Application.
+- **Prevents:** business logic in endpoints or adapters; hand-rolled request validation per endpoint; a different error shape per service; exceptions used for control flow.
+- **Rule:** Endpoints are Minimal API route groups that only parse → call one use case → map the result. Use cases return `Result<T>` (`libs/MyCollection.Results`) with typed errors for expected failures and throw only for bugs. Every 4xx/5xx body is RFC 9457 ProblemDetails with a stable snake_case `code` (e.g. `invalid_credentials`) and `traceId`. Each service owns its codes; ServiceDefaults owns the single `ErrorKind` → HTTP status mapping.
+  - **Request shape** (required, format, length) is checked at the edge with .NET built-ins only: DataAnnotations on the request type, enabled by `builder.Services.AddValidation()`, with the failure shaped by ServiceDefaults' `AddMyCollectionProblemDetails()` (`code: validation_failed`). Write a check by hand only when no built-in covers it.
+  - **Business rules** (uniqueness, limits, ownership, state transitions) live only in Application, in the use case or the Domain it calls. Infrastructure and Api never decide one; Infrastructure only reports technical facts (AD-11).
 
 ### AD-14 — Routing and gateway duties
 
@@ -197,6 +199,16 @@ flowchart LR
   - **Verified email:** each provider maps `emailVerified` explicitly (Google `email_verified`, Discord `verified`); a missing claim means `false`.
   - **Data Protection keys** (which protect the OAuth state) persist to a volume.
   - **Dev redirect URIs:** both the gateway URI (`:8080`) and the direct URI (`:5001`) are registered at each provider.
+
+### AD-23 — One type per contract file; use-case files stay small
+
+- **Binds:** every service's `Api` and `Application` projects; every agent writing code (Claude, BMad build/spec/review/dev)
+- **Prevents:** features laid out differently per author; contract types hidden inside endpoint files; use-case files growing into grab-bags of errors and helpers.
+- **Rule:**
+  - **Api:** each request and response type lives in its own file named after the type, next to its endpoint (`Endpoints/RegisterRequest.cs`, `Endpoints/RegisterResponse.cs`). The endpoint file holds only the route mapping and handler.
+  - **Application:** a feature folder is `Features/<Feature>/`. The use case's `Command` and `Result` records may share `<Feature>Command.cs`.
+  - **The 100-line rule:** a use case may keep its `Error` definitions and small private helpers in its own file while that file stays **under 100 lines**. Once it would reach 100, errors move to `<Feature>Errors.cs` and each helper class to its own file in the same folder.
+  - Agents read `docs/conventions.md` before creating code; it carries these rules in working detail.
 
 ## Consistency Conventions
 
@@ -302,7 +314,7 @@ MyCollection/
 
 | Capability / Area | Lives in | Governed by |
 | --- | --- | --- |
-| CAP-1 Register (email/password) | auth-api `Features/Register` use case; `user_credentials` | AD-2, AD-10, AD-11, AD-13 |
+| CAP-1 Register (email/password) | auth-api `Features/Register` use case; `user_credentials` | AD-2, AD-10, AD-11, AD-13, AD-23 |
 | CAP-2 Password login | auth-api `Login` use case, `ITokenIssuer` | AD-6, AD-7, AD-8, AD-9, AD-10 |
 | CAP-3 Refresh | auth-api `RefreshToken` use case; `refresh_tokens` | AD-8, AD-9, AD-11 |
 | CAP-4 Logout | auth-api `Logout` use case | AD-8, AD-9 |
@@ -316,11 +328,11 @@ MyCollection/
 ## Deferred
 
 - **Production deployment and hosting**: target platform, TLS termination at the gateway, secret store for the signing key and OAuth secrets. *Revisit when the first deployment is planned.* AD-12, AD-17 and AD-19 already fix the production-shaped parts.
-- **Email identity** (email verification, password reset, SMTP via MailKit, Mailpit in dev, Brevo as the production SMTP relay on its free tier): its own spec, `spec-email-identity`. It closes AD-10's accepted squatting gap. Templates stay as HTML built in application code and sent as the SMTP body, not the provider's dashboard editor, so the relay stays swappable via SMTP host/credentials alone.
+- **Email identity** (email verification, password reset, SMTP via MailKit, Brevo as the SMTP relay in dev and production on its free tier, using a separate named SMTP key per environment; integration tests use a faked SMTP): its own spec, `spec-email-identity`. It closes AD-10's accepted squatting gap. Templates stay as HTML built in application code and sent as the SMTP body, not the provider's dashboard editor, so the relay stays swappable via SMTP host/credentials alone.
 - **Signing-key rotation procedure**: the `kid` and JWKS mechanism exists; a single dev key is enough for now.
 - **Observability beyond stdout logs** (central log UI such as Seq or Loki, metrics, tracing): roadmap phase 6.
 - **E2E tests** (including a mock OAuth2 server): after the first slice ships.
-- **Wishlist and Cards BFF internals** (MongoDB document shape and migrations, Redis cache keys and TTL, resilience library): decided in their own slices, within AD-1 to AD-22. How services call each other is already fixed by AD-1.
+- **Wishlist and Cards BFF internals** (MongoDB document shape and migrations, Redis cache keys and TTL, resilience library): decided in their own slices, within AD-1 to AD-23. How services call each other is already fixed by AD-1.
 - **HTTPS in dev** (so Safari works): with TLS in production.
 - **Authorization beyond "authenticated user owns their data"** (roles, admin): no capability needs it yet.
 - **API versioning**: until a second client exists.
