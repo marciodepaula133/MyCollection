@@ -21,6 +21,7 @@ Precedence: **spine > spec > docs**. `docs/history/` is historical and must not 
 
 ## Rules that are easy to break
 
+- Follow .NET / ASP.NET Core patterns (check what the framework or ASP.NET Core Identity does first); never borrow patterns from other ecosystems. Never add behaviour the spec doesn't ask for without raising it first.
 - Hexagonal per service: `<Svc>.Domain ← Application ← Infrastructure ← Api`. No EF Core or ASP.NET types in Domain or Application; no `DbContext` in endpoints.
 - Services never reference another service's projects or database. `libs/` holds plumbing only.
 - NuGet versions only in `Directory.Packages.props`.

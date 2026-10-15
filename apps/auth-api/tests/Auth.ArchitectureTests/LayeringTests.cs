@@ -46,6 +46,11 @@ public class LayeringTests
         Types().That().HaveFullNameContaining("Microsoft.AspNetCore")
             .As("ASP.NET Core types");
 
+    // Token signing is an Infrastructure adapter; Application sees only the ITokenIssuer port.
+    private static readonly IObjectProvider<IType> IdentityModelTypes =
+        Types().That().HaveFullNameContaining("IdentityModel")
+            .As("IdentityModel types");
+
     // NotDependOnAny takes a single IObjectProvider, so combining several layers/namespaces
     // into one forbidden set is built with .Or() at the predicate ("That()") level, not by
     // combining already-built IObjectProvider instances (which has no .Or() extension).
@@ -89,6 +94,14 @@ public class LayeringTests
     {
         Types().That().Are(ApplicationTypes)
             .Should().NotDependOnAny(AspNetCoreTypes)
+            .Check(Architecture);
+    }
+
+    [Fact]
+    public void Application_does_not_depend_on_identity_model()
+    {
+        Types().That().Are(ApplicationTypes)
+            .Should().NotDependOnAny(IdentityModelTypes)
             .Check(Architecture);
     }
 

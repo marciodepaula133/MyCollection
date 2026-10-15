@@ -17,6 +17,8 @@ public class ProjectReferenceTests
         "Microsoft.EntityFrameworkCore",
         "Npgsql.EntityFrameworkCore.PostgreSQL",
         "Microsoft.AspNetCore",
+        "Microsoft.IdentityModel",
+        "System.IdentityModel",
     ];
 
     private static readonly string[] ForbiddenInDomain =
@@ -24,6 +26,8 @@ public class ProjectReferenceTests
         "Microsoft.EntityFrameworkCore",
         "Npgsql.EntityFrameworkCore.PostgreSQL",
         "Microsoft.AspNetCore",
+        "Microsoft.IdentityModel",
+        "System.IdentityModel",
     ];
 
     [Fact]

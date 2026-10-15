@@ -19,6 +19,10 @@ Binding rules: spine AD-3 and AD-20. Framework: **xUnit v3** on the Microsoft Te
 
 `Auth.ArchitectureTests`' five layering rules currently carry `.WithoutRequiringPositiveResults()`. ArchUnitNET fails a rule by default when its target set is empty ("requires positive evaluation," a typo-catching safety net), and every layer is still an empty scaffold — so without that call, all five would fail today for the wrong reason. Remove it layer by layer as CAP-1 adds real classes; until then these tests pass vacuously rather than asserting anything.
 
+## Integration fixture
+
+`AuthApiFixture` (one per test class) starts PostgreSQL 18, applies migrations to one database (`Migrated`) and leaves a second one empty (`Unmigrated`). auth-api refuses to start without a JWT signing key, so the fixture also generates a throwaway RSA key once, writes it to a temp PEM and sets `Jwt:SigningKeyPath` on **both** factories. `SigningPublicKey` exposes its public half so tests can validate issued tokens. Tests that need exact token times override `TimeProvider` with `ConfigureTestServices` on a factory derived from `Migrated`.
+
 ## Running
 
 - `nx test <Project>` for one project, `nx affected -t test` for whatever a change touched. CI runs `nx affected -t build test`.

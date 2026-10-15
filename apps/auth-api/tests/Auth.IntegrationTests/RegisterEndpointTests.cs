@@ -233,6 +233,20 @@ public class RegisterEndpointTests(AuthApiFixture fixture) : IClassFixture<AuthA
         }
     }
 
+    [Fact]
+    public async Task Json_body_is_a_415_unsupported_media_type()
+    {
+        using var content = new StringContent(
+            $$"""{"email":"json-{{Guid.NewGuid():N}}@example.com","password":"{{ValidPassword}}","firstName":"Test","lastName":"User"}""",
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await Client.PostAsync("/api/auth/register", content, Ct);
+
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        await AssertProblem(response, "unsupported_media_type");
+    }
+
     private static async Task AssertAcceptedOrRejected(HttpResponseMessage response, bool accepted, string errorKey)
     {
         if (accepted)

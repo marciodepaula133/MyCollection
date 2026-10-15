@@ -13,17 +13,17 @@ Direct ports and the Postgres port exist only in `docker-compose.override.yml` (
 
 ## auth-api
 
-Scaffolded, not yet implemented: the four hexagonal projects, health checks and OpenAPI generation exist; CAP-1…CAP-6 business logic doesn't. Routes below are the target surface from `spec-mycollection-platform`, all under `/api/auth` unless noted:
+Register (CAP-1) and password login (CAP-2) are implemented; the other routes are the target surface from `spec-mycollection-platform`. All are under `/api/auth` unless noted:
 
 | Method | Path | Purpose | CAP |
 |---|---|---|---|
-| POST | `/register` | Create a password account | CAP-1 |
-| POST | `/login` | Password login → access token (body) + refresh cookie | CAP-2 |
+| POST | `/register` | Create a password account (done) | CAP-1 |
+| POST | `/login` | Password login → access token (body) + refresh cookie (done) | CAP-2 |
 | POST | `/refresh-token` | Rotate the refresh cookie → new access token | CAP-3 |
 | POST | `/logout` | Revoke the refresh-token family | CAP-4 |
 | GET | `/google`, `/google/callback`, `/google/complete` | Google sign-in (callback is owned by the ASP.NET handler) | CAP-5 |
 | GET | `/discord`, `/discord/callback`, `/discord/complete` | Discord sign-in | CAP-6 |
-| GET | `/.well-known/jwks.json`, `/.well-known/openid-configuration` (root path, internal) | Public signing keys and discovery for other services | AD-6 |
+| GET | `/.well-known/jwks.json`, `/.well-known/openid-configuration` (root path, internal) | Public signing keys and discovery for other services (not served yet) | CAP-9 (AD-6) |
 | GET | `/health/live`, `/health/ready` (internal) | Health for Docker | AD-19 |
 
 Tables: `users`, `user_credentials`, `user_oauth`, `refresh_tokens`. See [auth.md](auth.md).

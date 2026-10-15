@@ -1,8 +1,5 @@
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-cap-1-register-with-email-password.md`
-  summary: Malformed/empty JSON bodies and wrong content types return the framework 400/415 without the stable `code`/`traceId` (AD-13).
-  evidence: Binding failures happen before the endpoint's Validate(); needs AddProblemDetails customization or manual body binding.
-- source_spec: `_bmad-output/implementation-artifacts/spec-cap-1-register-with-email-password.md`
   summary: No test runs init.sql or connects as the DML-only auth_app role; readiness and register under least privilege are only verified manually.
   evidence: AuthApiFixture uses the Testcontainers superuser; a compose smoke test in CI would close it. Manual check of init.sql in a throwaway container passed on 2026-10-07.
 - source_spec: `_bmad-output/implementation-artifacts/spec-cap-1-register-with-email-password.md`
@@ -18,3 +15,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-register-first-last-name.md`
   summary: Trim first/last name before storing, and document validation error keys (PascalCase) plus the 400 schema in OpenAPI.
   evidence: " Ana " is stored padded; ProducesProblem(400) does not describe `errors`/`code`; found in review.
+- source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
+  summary: Bodyless framework errors other than 400/415 (404 unknown route, 405 wrong method) now get ProblemDetails with `traceId` but no `code` (AD-13).
+  evidence: UseStatusCodePages covers every status; CustomizeProblemDetails only maps 400/415. Before CAP-2 these had no body at all. Needs a decision on codes such as `not_found`/`method_not_allowed`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
+  summary: Token responses (login, later refresh) should send `Cache-Control: no-store` (RFC 6749 §5.1), as ASP.NET Core Identity's bearer endpoints do.
+  evidence: Not in the CAP-2 spec, so not added silently (CLAUDE.md); raised to the user at review.
+- source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
+  summary: Expired and revoked `refresh_tokens` rows are never deleted; every login adds one.
+  evidence: No cleanup job or delete path exists; decide with CAP-3/4 (refresh/logout).
+- source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
+  summary: `tools/generate-dev-jwt-key.cs` and its wrappers have no automated test.
+  evidence: Verified manually on an empty keys/ folder on 2026-10-15 (create, then skip); a CI smoke step could run it into a temp dir.
