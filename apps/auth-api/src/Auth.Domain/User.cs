@@ -28,8 +28,14 @@ public class User
     }
 
     /// <summary>
-    /// Creates a password sign-up. <paramref name="normalizedEmail"/> must already be trimmed
-    /// and lower-cased; <see cref="EmailVerifiedAt"/> stays null until email verification
+    /// The form every email is stored and compared in: trimmed and lower-cased. Every sign-up
+    /// and sign-in path normalizes with this before storing or looking up a user.
+    /// </summary>
+    public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    /// <summary>
+    /// Creates a password sign-up. <paramref name="normalizedEmail"/> must already be normalized
+    /// with <see cref="NormalizeEmail"/>; <see cref="EmailVerifiedAt"/> stays null until email verification
     /// exists (AD-10). <paramref name="firstName"/> and <paramref name="lastName"/> are mandatory for this sign-up path, even though
     /// the column stays nullable for other paths (e.g. future OAuth sign-ups).
     /// </summary>

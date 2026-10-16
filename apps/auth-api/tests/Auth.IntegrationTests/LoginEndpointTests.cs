@@ -33,6 +33,7 @@ public class LoginEndpointTests(AuthApiFixture fixture) : IClassFixture<AuthApiF
         var response = await Login($"  {email.ToUpperInvariant()} ", ValidPassword);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
         Assert.False(string.IsNullOrEmpty(body.RootElement.GetProperty("accessToken").GetString()));
         Assert.True(body.RootElement.TryGetProperty("expiresAt", out _));

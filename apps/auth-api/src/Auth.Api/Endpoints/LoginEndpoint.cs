@@ -28,6 +28,8 @@ public static class LoginEndpoint
         return result.Match(
             login =>
             {
+                // The body carries a bearer token: no cache may keep it (RFC 6749 §5.1).
+                httpContext.Response.Headers.CacheControl = "no-store";
                 RefreshTokenCookie.Append(httpContext.Response, login.RefreshToken, login.RefreshExpiresAt);
                 return HttpResults.Ok(new TokenResponse(login.AccessToken, login.ExpiresAt));
             },

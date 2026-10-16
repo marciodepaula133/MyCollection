@@ -140,10 +140,10 @@ context: ['{project-root}/docs/auth.md']
 | R3 | No test for "missing key stops startup" (spec AC 1) | medium | patch: integration tests for missing and invalid key |
 | R4 | No test for relative key path resolution against the content root (IDE mode) | low | patch: test the resolved options path |
 | R5 | `UseStatusCodePages` gives 404/405 a ProblemDetails with `traceId` but no `code` | low | defer: before this change these had no body at all; new codes need a decision |
-| R6 | Token response lacks `Cache-Control: no-store` (RFC 6749 §5.1) | medium | defer + raised to user: behaviour not in spec (CLAUDE.md: raise first) |
+| R6 | Token response lacks `Cache-Control: no-store` (RFC 6749 §5.1) | medium | user approved 2026-10-16: login sets `Cache-Control: no-store` |
 | R7 | OpenAPI omits `Set-Cookie`, nullable+required strings, no `format: email` | low | rejected: cosmetic; documenting the header needs a transformer |
 | R8 | `LoginRequest.Email` has no `MaxLength(254)` like register | low | rejected: frozen block fixes the login shape; body size is bounded by Kestrel |
-| R9 | Login reuses `RegisterUseCase.NormalizeEmail` (cross-feature reference) | low | rejected: Code Map directs the reuse; revisit when CAP-5 needs it |
+| R9 | Login reuses `RegisterUseCase.NormalizeEmail` (cross-feature reference) | low | user approved 2026-10-16: moved to `User.NormalizeEmail` in Domain; both use cases call it |
 | R10 | Expired refresh rows are never deleted | low | defer: cleanup belongs with CAP-3/4 |
 | R11 | Password-cap test uses an unknown email, so bcrypt never sees 1024 chars | low | patch: use a registered user |
 | R12 | 400/415 tests don't assert no row/cookie | false | no user exists for those emails and the handler never runs; nothing can be written |

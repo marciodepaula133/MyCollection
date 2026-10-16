@@ -1,5 +1,4 @@
 using Auth.Application.Abstractions;
-using Auth.Application.Features.Register;
 using Auth.Domain;
 using MyCollection.Results;
 
@@ -23,7 +22,7 @@ public sealed class LoginUseCase(
     public async Task<Result<LoginResult>> ExecuteAsync(LoginCommand command, CancellationToken cancellationToken)
     {
         var candidate = await users.FindForLoginAsync(
-            RegisterUseCase.NormalizeEmail(command.Email), cancellationToken);
+            User.NormalizeEmail(command.Email), cancellationToken);
 
         // Unknown email or no password credential: fail without a bcrypt check, as ASP.NET Core
         // Identity's PasswordSignInAsync does.

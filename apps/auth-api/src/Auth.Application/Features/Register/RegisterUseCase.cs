@@ -19,7 +19,7 @@ public sealed class RegisterUseCase(
         RegisterCommand command,
         CancellationToken cancellationToken)
     {
-        var email = NormalizeEmail(command.Email);
+        var email = User.NormalizeEmail(command.Email);
 
         // Checked before hashing so a known duplicate skips the bcrypt cost.
         if (await users.EmailExistsAsync(email, cancellationToken))
@@ -39,6 +39,4 @@ public sealed class RegisterUseCase(
 
         return new RegisterResult(user.Id, user.Email, user.FirstName!, user.LastName!);
     }
-
-    public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

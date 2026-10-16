@@ -6,9 +6,28 @@ Binding rules: spine AD-12, AD-17, AD-19.
 
 ## First run
 
+Do this once per clone, before any of the [three ways to run](#three-ways-to-run). auth-api refuses to start without the JWT signing key, in Docker and in the IDE alike.
+
 1. Copy `.env.example` to `.env`.
-2. **Generate the dev JWT signing key before the first `docker compose up`:** `tools/generate-dev-jwt-key.ps1` (Windows) or `tools/generate-dev-jwt-key.sh`. It writes `keys/jwt-signing-key.pem` (PKCS#8 private key) and `keys/jwt-signing-key.pub.pem` (both gitignored). The scripts need **only the .NET SDK**: they run the file-based app `tools/generate-dev-jwt-key.cs`, no `openssl`. Running them again reports that the key exists and changes nothing.
-3. `docker compose up`. Without the key, auth-api stops at startup with an error naming the missing path.
+2. **Generate the dev JWT signing key.** From the repo root, run one of these:
+
+   ```powershell
+   # Windows. The bypass applies to this one run only; Windows blocks local scripts by default.
+   powershell -ExecutionPolicy Bypass -File tools\generate-dev-jwt-key.ps1
+   ```
+
+   ```bash
+   # macOS, Linux, Git Bash
+   ./tools/generate-dev-jwt-key.sh
+   ```
+
+   ```bash
+   # Any OS, without the wrappers (what both scripts run)
+   dotnet run --file tools/generate-dev-jwt-key.cs -- keys
+   ```
+
+   This writes `keys/jwt-signing-key.pem` (PKCS#8 private key) and `keys/jwt-signing-key.pub.pem` (SPKI public key). Both are gitignored. You need **only the .NET SDK**, not `openssl`. Running it again reports that the key exists and changes nothing. To rotate the key, delete both files and run it again.
+3. Start the stack in one of the modes below. If the key is missing, auth-api stops at startup with `JWT signing key not found at '<path>'`.
 
 ## Prerequisites
 
@@ -18,6 +37,8 @@ Binding rules: spine AD-12, AD-17, AD-19.
 - Git and the GitHub CLI
 
 ## Three ways to run
+
+Every mode needs the signing key from [First run](#first-run).
 
 | Mode | Command | Use it for | Reach it at |
 |---|---|---|---|

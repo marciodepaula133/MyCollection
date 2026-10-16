@@ -19,9 +19,6 @@
   summary: Bodyless framework errors other than 400/415 (404 unknown route, 405 wrong method) now get ProblemDetails with `traceId` but no `code` (AD-13).
   evidence: UseStatusCodePages covers every status; CustomizeProblemDetails only maps 400/415. Before CAP-2 these had no body at all. Needs a decision on codes such as `not_found`/`method_not_allowed`.
 - source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
-  summary: Token responses (login, later refresh) should send `Cache-Control: no-store` (RFC 6749 §5.1), as ASP.NET Core Identity's bearer endpoints do.
-  evidence: Not in the CAP-2 spec, so not added silently (CLAUDE.md); raised to the user at review.
-- source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
   summary: Expired and revoked `refresh_tokens` rows are never deleted; every login adds one.
   evidence: No cleanup job or delete path exists; decide with CAP-3/4 (refresh/logout).
 - source_spec: `_bmad-output/implementation-artifacts/spec-cap-2-login-with-email-password.md`
