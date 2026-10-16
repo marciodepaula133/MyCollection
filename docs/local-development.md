@@ -2,7 +2,32 @@
 
 Binding rules: spine AD-12, AD-17, AD-19.
 
-> Status: the scaffold is in place — Nx workspace, the .NET solution, auth-api's four hexagonal projects, the gateway, the compose topology and CI all build and run as described below. No capability (CAP-1…CAP-8) is implemented yet: only `/health/live` and `/health/ready` respond for real. The routes in [services.md](services.md) are the target surface from the spec, not yet live.
+> Status: the scaffold is in place — Nx workspace, the .NET solution, auth-api's four hexagonal projects, the gateway, the compose topology and CI all build and run as described below. Register (CAP-1) and password login (CAP-2) are live; the other routes in [services.md](services.md) are the target surface from the spec, not yet live.
+
+## First run
+
+Do this once per clone, before any of the [three ways to run](#three-ways-to-run). auth-api refuses to start without the JWT signing key, in Docker and in the IDE alike.
+
+1. Copy `.env.example` to `.env`.
+2. **Generate the dev JWT signing key.** From the repo root, run one of these:
+
+   ```powershell
+   # Windows. The bypass applies to this one run only; Windows blocks local scripts by default.
+   powershell -ExecutionPolicy Bypass -File tools\generate-dev-jwt-key.ps1
+   ```
+
+   ```bash
+   # macOS, Linux, Git Bash
+   ./tools/generate-dev-jwt-key.sh
+   ```
+
+   ```bash
+   # Any OS, without the wrappers (what both scripts run)
+   dotnet run --file tools/generate-dev-jwt-key.cs -- keys
+   ```
+
+   This writes `keys/jwt-signing-key.pem` (PKCS#8 private key) and `keys/jwt-signing-key.pub.pem` (SPKI public key). Both are gitignored. You need **only the .NET SDK**, not `openssl`. Running it again reports that the key exists and changes nothing. To rotate the key, delete both files and run it again.
+3. Start the stack in one of the modes below. If the key is missing, auth-api stops at startup with `JWT signing key not found at '<path>'`.
 
 ## Prerequisites
 
@@ -12,6 +37,8 @@ Binding rules: spine AD-12, AD-17, AD-19.
 - Git and the GitHub CLI
 
 ## Three ways to run
+
+Every mode needs the signing key from [First run](#first-run).
 
 | Mode | Command | Use it for | Reach it at |
 |---|---|---|---|
@@ -36,7 +63,7 @@ Binding rules: spine AD-12, AD-17, AD-19.
 ## Secrets and config
 
 - Copy `.env.example` to `.env` (gitignored) and fill in the Google/Discord client ids and secrets.
-- Generate the dev JWT signing key with the script in `tools/`. The PEM is mounted into auth-api and never committed.
+- Generate the dev JWT signing key with the script in `tools/` (see [First run](#first-run)). Compose mounts the repo's `./keys` folder read-only at `/run/secrets` in auth-api, which is where `Jwt__SigningKeyPath` in `.env.example` points. In IDE mode, `appsettings.Development.json` sets `Jwt:SigningKeyPath` to `../../../../keys/jwt-signing-key.pem`, resolved against `apps/auth-api/src/Auth.Api`, so the same file is used. The PEM is never committed.
 - IDE mode: the non-secret defaults are in `appsettings.Development.json`. Its `ConnectionStrings:Postgres` points at `localhost:5432` as `auth_app` with the placeholder password from `.env.example` (`change-me-app`). If your `.env` uses a different `AUTH_APP_DB_PASSWORD`, override it with `dotnet user-secrets set "ConnectionStrings:Postgres" "..." --project apps/auth-api/src/Auth.Api`. Start the database first: `docker compose up -d auth-db auth-migrate` (this also applies all migrations). Other secrets, for example: `dotnet user-secrets set "Google:ClientSecret" "..." --project apps/auth-api/src/Auth.Api`.
 - OAuth redirect URIs to register with Google/Discord (dev), gateway and direct: `http://localhost:8080/api/auth/<provider>/callback` and `http://localhost:5001/api/auth/<provider>/callback`.
 - Use Chrome, Edge or Firefox in dev. Safari drops `Secure` cookies over plain HTTP.

@@ -95,6 +95,9 @@ public class RegisterUseCaseTests
         public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken) =>
             Task.FromResult(ExistingEmails.Contains(normalizedEmail));
 
+        public Task<LoginCandidate?> FindForLoginAsync(string normalizedEmail, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Register never looks a user up for login.");
+
         public Task AddAsync(User user, string passwordHash, CancellationToken cancellationToken)
         {
             Added.Add((user, passwordHash));

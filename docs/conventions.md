@@ -59,6 +59,7 @@ Auth.Application/Features/Register/
 - Each endpoint: parse → call one use case → map the `Result` (3–5 lines).
 - Request-shape validation (required fields, formats, lengths) happens at the edge, using .NET built-ins only: DataAnnotations (`[Required]`, `[EmailAddress]`, `[StringLength]`, `[Url]`, …) on the request type, enabled once per service with `builder.Services.AddValidation()`. Hand-write a check only when no built-in attribute covers it. `MyCollection.ServiceDefaults.AddMyCollectionProblemDetails()` makes the automatic failure carry this project's `code: validation_failed`/`traceId` like every other error.
 - Business rules (email already taken, limits, ownership, state transitions) live **only in Application**: the use case, or the Domain it calls. Endpoints and Infrastructure never decide a business rule. Infrastructure reports technical facts (e.g. `CommitOutcome.UniqueViolation`) and the use case decides what they mean.
+- Request bodies are **JSON by default**: bind `TRequest` from the body (no attribute needed); a positional record with DataAnnotations on its properties is fine (`LoginRequest`). Use `multipart/form-data` **only for file uploads**; register is the one such endpoint today.
 - A request that uploads a file binds `[FromForm] TRequest` with an `IFormFile`/`IFormFileCollection` property, not JSON; call `.DisableAntiforgery()` on the route (Minimal APIs require it for form-binding endpoints if antiforgery services are ever registered). Make `TRequest` a plain class with `init`-only properties, **not** a positional record: the form complex-type binder requires every record constructor parameter to have a value present and throws an unhandled `BadHttpRequestException` otherwise — bypassing `[Required]`/`AddValidation()` entirely — even for a nullable parameter with a `= null` default. A settable-property class has no such constructor to satisfy; unset properties default to `null` and `[Required]` catches them normally.
 - Routes are lowercase kebab-case. No `/v1` yet.
 
@@ -73,6 +74,15 @@ Auth.Application/Features/Register/
     "code": "invalid_credentials", "traceId": "00-…" }
   ```
 - `code` is snake_case and stable once published.
+- Bodies the framework rejects before validation also get `code` and `traceId`, for every endpoint in every service. `AddMyCollectionProblemDetails()` + `app.UseMyCollectionProblemDetails()` (ServiceDefaults, built on `AddProblemDetails` + `UseStatusCodePages`) set them by status:
+
+  | Status | `code` | When |
+  |---|---|---|
+  | 400 | `validation_failed` | DataAnnotations on the request type failed (`errors` lists each field) |
+  | 400 | `malformed_request` | The request can't be bound, e.g. invalid or empty JSON |
+  | 415 | `unsupported_media_type` | Wrong `Content-Type` (e.g. `text/plain` to a JSON endpoint, JSON to register) |
+
+- `AddMyCollectionProblemDetails()` also sets `RouteHandlerOptions.ThrowOnBadRequest = false`, so in Development too a binding failure becomes the ProblemDetails above instead of the developer exception page; its details go to Debug logs (`Microsoft.AspNetCore.Http.RequestDelegateFactory`).
 
 ## Data and JSON
 

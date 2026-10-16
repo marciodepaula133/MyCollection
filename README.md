@@ -29,11 +29,10 @@ flowchart TD
 
 ## Getting started
 
-Planned (once scaffolded):
-
 ```powershell
-cp .env.example .env        # fill in OAuth client ids/secrets
-docker compose up           # gateway on http://localhost:8080
+cp .env.example .env                                                 # fill in OAuth client ids/secrets
+powershell -ExecutionPolicy Bypass -File tools\generate-dev-jwt-key.ps1   # once; or ./tools/generate-dev-jwt-key.sh
+docker compose up                                                    # gateway on http://localhost:8080
 ```
 
 Details: [docs/local-development.md](docs/local-development.md).

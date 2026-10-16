@@ -43,6 +43,9 @@ A vision to realize, serving two goals equally. The first is a card-collection t
 - **CAP-8**
   - **intent:** A developer can run the whole slice locally with one command and iterate without rebuilding.
   - **success:** `docker compose up` starts PostgreSQL, the one-shot migration step, the Auth API and the gateway, in that order. Saving a `.cs` file hot-reloads the service. `docker compose up auth-api` runs the Auth API alone (with its database), reachable directly for Postman.
+- **CAP-9**
+  - **intent:** Other services can verify access tokens issued by the Auth API, because it publishes its public signing keys on the internal network (spine AD-6).
+  - **success:** `GET /.well-known/jwks.json` returns the RS256 public key with a `kid` matching the token header. `GET /.well-known/openid-configuration` returns `issuer` and `jwks_uri`. A token from login validates with the standard JwtBearer handler pointed at that discovery document. The gateway does not expose either path.
 
 ## Constraints
 

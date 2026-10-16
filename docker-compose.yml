@@ -69,6 +69,10 @@ services:
       ForwardedHeaders__KnownIPNetworks: ${ForwardedHeaders__KnownIPNetworks:?}
     volumes:
       - auth-dataprotection-keys:/root/.aspnet/DataProtection-Keys
+      # The JWT signing key (AD-6): run tools/generate-dev-jwt-key first. The folder is mounted,
+      # not the file, so a missing key fails auth-api's startup check instead of becoming a
+      # host directory. Jwt__SigningKeyPath points inside it.
+      - ./keys:/run/secrets:ro
     depends_on:
       auth-migrate:
         condition: service_completed_successfully

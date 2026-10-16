@@ -15,6 +15,8 @@ public class AuthDbContext : DbContext
 
     public DbSet<UserCredential> UserCredentials => Set<UserCredential>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuthDbContext).Assembly);

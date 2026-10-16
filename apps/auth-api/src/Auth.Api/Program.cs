@@ -7,11 +7,15 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddAuthInfrastructure();
+// The OpenAPI generator starts the app at build time, where no signing key exists (AD-16).
+builder.Services.AddAuthInfrastructure(validateOnStart: !OpenApiGeneration.IsRunning);
 builder.Services.AddValidation();
 builder.Services.AddMyCollectionProblemDetails();
 
 var app = builder.Build();
+
+// Framework-rejected requests (malformed JSON, wrong content type) answer ProblemDetails too.
+app.UseMyCollectionProblemDetails();
 
 if (app.Environment.IsDevelopment())
 {
@@ -37,7 +41,9 @@ app.MapGet("/health/ready", async (HealthCheckService health, CancellationToken 
     .Produces(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status503ServiceUnavailable);
 
-app.MapGroup("/api/auth").MapRegister();
+app.MapGroup("/api/auth")
+    .MapRegister()
+    .MapLogin();
 
 app.Run();
 

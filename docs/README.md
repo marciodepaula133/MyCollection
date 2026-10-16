@@ -41,6 +41,7 @@ Start here. Each entry says **what questions the file answers**, so you (or an A
 | "How do I add a NuGet package?" | [conventions.md § Packages](conventions.md#packages) |
 | "Which port is which?" | [services.md](services.md) |
 | "How do I run/debug only auth-api?" | [local-development.md](local-development.md) |
+| "How do I generate the JWT signing key?" / "auth-api says the signing key is not found" | [local-development.md § First run](local-development.md#first-run) |
 | "What's deliberately *not* decided yet?" | Spine § Deferred |
 
 ## Implementing a capability (`CAP-n`)
